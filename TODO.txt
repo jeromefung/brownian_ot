@@ -1,0 +1,16 @@
+Use Sphinx for documentation:
+    http://www.sphinx-doc.org/en/master/
+
+See suggestions here for structuring the project repo:
+    https://docs.python-guide.org/writing/structure/
+
+Follow numpy and use purest for unit testing.
+
+Classes to implement:
+    Particle
+    Simulation
+    ExternalForce (base)
+        FreeParticle (inherits)
+        OpticalForce (inherits)
+
+
