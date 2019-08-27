@@ -1,15 +1,22 @@
 import numpy as np
+import quaternion
+
+from numpy import sin, cos
 
 class Particle:
     '''
     Stores information about particle being simulated.
     '''
 
-    def __init__(self, D, cod, f_ext, kT):
+    def __init__(self, D, cod, f_ext, kT,
+                 pos = np.zeros(3),
+                 orient = quaternion.quaternion(1,0,0,0)):
         self.D = D
         self.cod = cod
         self.f_ext = f_ext
         self.kT = kT
+        self.pos = pos
+        self.orient = orient
 
 
     def _q_random(self):
@@ -25,15 +32,61 @@ class Particle:
     
     def update(self, dt):
         # calc q^B in particle frame
-        q_B = _q_random(self)
+        q_B = self._q_random()
         
-        # calc q^ext in lab frame
-        #     calc force, torque at com
-        #     correct torque to cod
-        # convert q^ext to particle frame
+        # calc generalized force in lab frame
+        force = self.f_ext(self.pos,
+                           quaternion.as_rotation_matrix(self.orient))
+
+        # find vector d from COM to COD in lab frame
+        # quaternion package does this by converting quaternion
+        # to rotation matrix, but could be done via conjugation
+        d = quaternion.rotate_vectors(self.orient, self.cod)
+
+        # correct torque (last 3 elts of generalized force) to be about cod
+        # TODO: check this
+        force[3:] = force[3:] - np.cross(d, force[0:3])
+        
+        # convert generalized force to particle frame
+        force_pf = np.ravel(quaternion.rotate_vectors(self.orient,
+                                                       force.reshape((2, -1))))
+
+        # calculate q^D in particle frame
+        q_D = np.matmul(self.D, force_pf) / self.kT
+
+        # find q_total, put time step in
+        q_total = (q_B + q_D) * dt # still in particle frame
+        
+ 
         # convert total generalized displacement to lab frame
         # update cod position
         # update orientation
         pass
 
     
+def bs_rotation(a, b, c):
+    '''
+    Calculate unbiased rotation operator given infinitesimal rotation angles
+    a, b, c about x, y, and z axes.
+
+    See Beard & Schlick, Biophys. J. (2003), eq. 5.
+
+    Use transpose of matrix in paper since we assume rotation matrices 
+    operate from the left. Also, fix typo in 22 element.
+    '''
+
+    omsq = a**2 + b**2 + c**2
+    om = np.sqrt(omsq)
+    m11 = ((b**2+c**2)*cos(om) + a**2) / omsq
+    m12 = a*b*(1-cos(om))/omsq + c*sin(om)/om
+    m13 = a*c*(1-cos(om))/omsq + b*sin(om)/om
+    m21 = a*b*(1-cos(om))/omsq - c*sin(om)/om
+    m22 = ((a**2+c**2)*cos(om) + b**2) / omsq
+    m23 = b*c*(1-cos(om))/omsq + a*sin(om)/om
+    m31 = a*c*(1-cos(om))/omsq + c*sin(om)/om
+    m32 = b*c*(1-cos(om))/omsq - a*sin(om)/om
+    m33 = ((a**2+b**2)*cos(om) + c**2) / omsq
+
+    return np.array([[m11, m12, m13],
+                     [m21, m22, m23],
+                     [m31, m32, m33]])

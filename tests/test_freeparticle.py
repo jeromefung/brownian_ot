@@ -14,6 +14,7 @@ def test_setup():
 
     particle = Particle(D = D_tensor, cod = np.zeros(3),
                         f_ext = None, kT = kT)
+    particle.update(1e-4)
 
     # set up simulation
     #sim = Simulation(particle, 'my_simulation',
