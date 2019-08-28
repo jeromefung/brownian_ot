@@ -64,27 +64,27 @@ class Particle:
         pass
 
     
-def bs_rotation(a, b, c):
+def unbiased_rotation(a, b, c):
     '''
     Calculate unbiased rotation operator given infinitesimal rotation angles
     a, b, c about x, y, and z axes.
 
     See Beard & Schlick, Biophys. J. (2003), eq. 5.
 
-    Use transpose of matrix in paper since we assume rotation matrices 
-    operate from the left. Also, fix typo in 22 element.
+    Note: typo fixed in 22 element.
     '''
-
     omsq = a**2 + b**2 + c**2
     om = np.sqrt(omsq)
     m11 = ((b**2+c**2)*cos(om) + a**2) / omsq
-    m12 = a*b*(1-cos(om))/omsq + c*sin(om)/om
+    m12 = a*b*(1-cos(om))/omsq - c*sin(om)/om
     m13 = a*c*(1-cos(om))/omsq + b*sin(om)/om
-    m21 = a*b*(1-cos(om))/omsq - c*sin(om)/om
+    
+    m21 = a*b*(1-cos(om))/omsq + c*sin(om)/om
     m22 = ((a**2+c**2)*cos(om) + b**2) / omsq
-    m23 = b*c*(1-cos(om))/omsq + a*sin(om)/om
-    m31 = a*c*(1-cos(om))/omsq + c*sin(om)/om
-    m32 = b*c*(1-cos(om))/omsq - a*sin(om)/om
+    m23 = b*c*(1-cos(om))/omsq - a*sin(om)/om
+    
+    m31 = a*c*(1-cos(om))/omsq - b*sin(om)/om
+    m32 = b*c*(1-cos(om))/omsq + a*sin(om)/om
     m33 = ((a**2+b**2)*cos(om) + c**2) / omsq
 
     return np.array([[m11, m12, m13],
