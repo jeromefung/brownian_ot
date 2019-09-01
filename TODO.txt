@@ -4,10 +4,10 @@ Use Sphinx for documentation:
 See suggestions here for structuring the project repo:
     https://docs.python-guide.org/writing/structure/
 
-Follow numpy and use purest for unit testing.
+Follow numpy and use pytest for unit testing.
 
 Classes to implement:
-    Particle
+    Particle [DONE]
     Simulation
     ExternalForce (base)
         FreeParticle (inherits)

@@ -16,7 +16,7 @@ class Particle:
         self.f_ext = f_ext
         self.kT = kT
         self.pos = pos
-        self.orient = orient
+        self.orient = orient # transforms 
 
 
     def _q_random(self):
@@ -28,6 +28,11 @@ class Particle:
         Return array of random displacements.
         '''
         return 2. * np.random.multivariate_normal(np.zeros(6), self.D)
+
+    
+    def _nice_output(self):
+        return np.concatenate((self.pos,
+                               quaternion.as_float_array(self.orient)))
 
     
     def update(self, dt):
@@ -57,11 +62,18 @@ class Particle:
         # find q_total, put time step in
         q_total = (q_B + q_D) * dt # still in particle frame
         
- 
-        # convert total generalized displacement to lab frame
-        # update cod position
-        # update orientation
-        pass
+        # convert spatial part of generalized displacement to lab frame
+        # following Garcia de la Torre, use non-updated orientation
+        delta_xyzlab = quaternion.rotate_vectors(self.orient.inverse(),
+                                                 q_total[0:3])
+        # if so, COM displaced by this amount. update!
+        self.pos = self.pos + delta_xyzlab
+
+        # update orientation quaternion
+        infntsml_rotmat = unbiased_rotation(*q_total[3:6])
+        infntsml_quat = quaternion.from_rotation_matrix(infntsml_rotmat)
+        self.orient = self.orient * infntsml_quat # quaternion composition
+    
 
     
 def unbiased_rotation(a, b, c):

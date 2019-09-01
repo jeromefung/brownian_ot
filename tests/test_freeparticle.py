@@ -1,11 +1,13 @@
 import numpy as np
 from numpy import pi, sin, cos
 from brownian_ot.particle import Particle, unbiased_rotation
+from brownian_ot.externalforce import free_particle
+from brownian_ot.simulation import run_simulation
 from numpy.testing import assert_allclose
 
 def test_setup():
     eta = 1e-3 # Pa s, water
-    kT = 295
+    kT = 1.38e-23*295
     a = 1e-6
 
     D_t = kT / (6*pi*eta*a)
@@ -14,17 +16,12 @@ def test_setup():
     D_tensor = np.diag(np.array([D_t, D_t, D_t, D_r, D_r, D_r]))
 
     particle = Particle(D = D_tensor, cod = np.zeros(3),
-                        f_ext = None, kT = kT)
-    #particle.update(1e-4)
-
-    # set up simulation
-    #sim = Simulation(particle, 'my_simulation',
-    #                 initial_pos = np.array([0,0,0]),
-    #                 initial_orient = np.identity(3),
-    #                 n_steps = 1e6, dt = 1e-5, save_int = 1000)
-
-    #sim.run()
-    return
+                        f_ext = free_particle, kT = kT)
+    
+    # run simulation
+    run_simulation(particle, 'my_simulation',
+                   n_steps = 10000, dt = 1e-5, save_int = 1000)
+    #assert False
 
 
 def test_unbiased_rotation():
