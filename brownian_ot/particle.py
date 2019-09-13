@@ -16,7 +16,7 @@ class Particle:
         self.f_ext = f_ext
         self.kT = kT
         self.pos = pos
-        self.orient = orient # transforms 
+        self.orient = orient # transforms PARTICLE to LAB frames
 
 
     def _q_random(self):
@@ -43,18 +43,20 @@ class Particle:
         force = self.f_ext(self.pos,
                            quaternion.as_rotation_matrix(self.orient))
 
-        # find vector d from COM to COD in lab frame
+        # find vector d from COM to COD, known in particle frame,
+        # in lab frame.
         # quaternion package does this by converting quaternion
         # to rotation matrix, but could be done via conjugation
         d = quaternion.rotate_vectors(self.orient, self.cod)
 
         # correct torque (last 3 elts of generalized force) to be about cod
-        # TODO: check this
+        # minus sign because d points TO the COD
         force[3:] = force[3:] - np.cross(d, force[0:3])
         
-        # convert generalized force to particle frame
-        force_pf = np.ravel(quaternion.rotate_vectors(self.orient,
-                                                       force.reshape((2, -1))))
+        # convert generalized force from lab to particle frame
+        # need inverse of orientation quaternion
+        force_pf = np.ravel(quaternion.rotate_vectors(self.orient.inverse(),
+                                                      force.reshape((2, -1))))
 
         # calculate q^D in particle frame
         q_D = np.matmul(self.D, force_pf) / self.kT
@@ -64,7 +66,7 @@ class Particle:
         
         # convert spatial part of generalized displacement to lab frame
         # following Garcia de la Torre, use non-updated orientation
-        delta_xyzlab = quaternion.rotate_vectors(self.orient.inverse(),
+        delta_xyzlab = quaternion.rotate_vectors(self.orient,
                                                  q_total[0:3])
         # if so, COM displaced by this amount. update!
         self.pos = self.pos + delta_xyzlab
@@ -72,6 +74,7 @@ class Particle:
         # update orientation quaternion
         infntsml_rotmat = unbiased_rotation(*q_total[3:6])
         infntsml_quat = quaternion.from_rotation_matrix(infntsml_rotmat)
+        # see BROWNRIG paper eq. 19
         self.orient = self.orient * infntsml_quat # quaternion composition
     
 
