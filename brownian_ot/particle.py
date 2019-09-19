@@ -19,15 +19,15 @@ class Particle:
         self.orient = orient # transforms PARTICLE to LAB frames
 
 
-    def _q_random(self):
+    def _q_random(self, dt):
         '''
         Calculate random generalized displacement obeying generalized
-        Stokes-Einstein relation (up to factor of \Delta t). Recall
+        Stokes-Einstein relation. Recall
         <q_i q_j> = 2D_{ij} \Delta t.
         
         Return array of random displacements.
         '''
-        return 2. * np.random.multivariate_normal(np.zeros(6), self.D)
+        return np.random.multivariate_normal(np.zeros(6), 2*self.D*dt)
 
     
     def _nice_output(self):
@@ -37,7 +37,7 @@ class Particle:
     
     def update(self, dt):
         # calc q^B in particle frame
-        q_B = self._q_random()
+        q_B = self._q_random(dt)
         
         # calc generalized force in lab frame
         force = self.f_ext(self.pos,
@@ -61,8 +61,8 @@ class Particle:
         # calculate q^D in particle frame
         q_D = np.matmul(self.D, force_pf) / self.kT
 
-        # find q_total, put time step in
-        q_total = (q_B + q_D) * dt # still in particle frame
+        # find q_total
+        q_total = q_B + q_D # still in particle frame
         
         # convert spatial part of generalized displacement to lab frame
         # following Garcia de la Torre, use non-updated orientation
