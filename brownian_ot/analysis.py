@@ -44,14 +44,14 @@ def calc_cluster_displacements(trajectory, nsteps, cluster_frame = True,
     max_rows = n_pts - nsteps
     
     # calculate lab-frame displacments
-    lab_disps = (np.roll(traj[:, 0:3], nsteps, axis = 0)
-                 - traj[:,0:3])[:max_rows, :]
+    lab_disps = (np.roll(trajectory[:, 0:3], nsteps, axis = 0)
+                 - trajectory[:,0:3])[:max_rows, :]
 
     # calculate each particle-frame unit vector in lab coordinates
     # (look at each column of rotation matrix)
-    u1_lab = traj[:max_rows, 3:6]
-    u2_lab = traj[:max_rows, 6:9]
-    u3_lab = traj[:max_rows, 9:12]
+    u1_lab = trajectory[:max_rows, 3:6]
+    u2_lab = trajectory[:max_rows, 6:9]
+    u3_lab = trajectory[:max_rows, 9:12]
 
     if cluster_frame:
         # dot products
@@ -80,8 +80,8 @@ def calc_axis_dot_prods(trajectory, nsteps, full_output = False):
     n_pts = trajectory.shape[0]
     max_rows = n_pts - nsteps
         
-    product = (traj[:, 3:] * np.roll(traj[:, 3:],
-                                     nsteps, axis = 0))[:max_rows ,:]
+    product = (trajectory[:, 3:] * np.roll(trajectory[:, 3:],
+                                           nsteps, axis = 0))[:max_rows ,:]
 
     u1dotu1 = (product[:, 0:3]).sum(axis = 1)
     u2dotu2 = (product[:, 3:6]).sum(axis = 1)
@@ -99,7 +99,7 @@ def calc_axis_dot_prods(trajectory, nsteps, full_output = False):
                          np.mean(u3dotu3)])
     
         
- def calc_msd(trajectory, max_steps = None, cluster_frame = True):
+def calc_msd(trajectory, max_steps = None, cluster_frame = True):
     # set a sensible default, half the trajectory length if not given
     if max_steps is None:
         max_steps = floor(trajectory.shape[0] / 2).astype('int')
@@ -111,7 +111,7 @@ def calc_axis_dot_prods(trajectory, nsteps, full_output = False):
                                                       cluster_frame =
                                                       cluster_frame)
 
-    return *output
+    return output[0], output[1], output[2]
 
 
 def calc_axis_autocorr(trajectory, max_steps = None):
@@ -124,7 +124,7 @@ def calc_axis_autocorr(trajectory, max_steps = None):
     for i in np.arange(1, max_steps + 1):
         output[:, i - 1] = calc_axis_dot_prods(trajectory, i)
 
-    return *output
+    return output[0], output[1], output[2]
 
 
 '''
