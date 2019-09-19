@@ -19,15 +19,16 @@ class Particle:
         self.orient = orient # transforms PARTICLE to LAB frames
 
 
-    def _q_random(self, dt):
+    def _q_random(self):
         '''
         Calculate random generalized displacement obeying generalized
         Stokes-Einstein relation. Recall
         <q_i q_j> = 2D_{ij} \Delta t.
         
-        Return array of random displacements.
+        Return array of random displacements, prior to rescaling.
+        Need to scale by \sqrt(2 dt)
         '''
-        return np.random.multivariate_normal(np.zeros(6), 2*self.D*dt)
+        return np.random.multivariate_normal(np.zeros(6), self.D)
 
     
     def _nice_output(self):
@@ -36,8 +37,8 @@ class Particle:
 
     
     def update(self, dt):
-        # calc q^B in particle frame
-        q_B = self._q_random(dt)
+        # calc q^B in particle frame with appropriate scaling
+        q_B = self._q_random() * np.sqrt(2 * dt)
         
         # calc generalized force in lab frame
         force = self.f_ext(self.pos,
@@ -89,19 +90,24 @@ def unbiased_rotation(a, b, c):
     Note: typo fixed in 22 element.
     '''
     omsq = a**2 + b**2 + c**2
-    om = np.sqrt(omsq)
-    m11 = ((b**2+c**2)*cos(om) + a**2) / omsq
-    m12 = a*b*(1-cos(om))/omsq - c*sin(om)/om
-    m13 = a*c*(1-cos(om))/omsq + b*sin(om)/om
-    
-    m21 = a*b*(1-cos(om))/omsq + c*sin(om)/om
-    m22 = ((a**2+c**2)*cos(om) + b**2) / omsq
-    m23 = b*c*(1-cos(om))/omsq - a*sin(om)/om
-    
-    m31 = a*c*(1-cos(om))/omsq - b*sin(om)/om
-    m32 = b*c*(1-cos(om))/omsq + a*sin(om)/om
-    m33 = ((a**2+b**2)*cos(om) + c**2) / omsq
 
-    return np.array([[m11, m12, m13],
-                     [m21, m22, m23],
-                     [m31, m32, m33]])
+    # allow for case of no rotation
+    if omsq == 0: # no rotation, return identity matrix
+        return np.identity(3)
+    else:
+        om = np.sqrt(omsq)
+        m11 = ((b**2+c**2)*cos(om) + a**2) / omsq
+        m12 = a*b*(1-cos(om))/omsq - c*sin(om)/om
+        m13 = a*c*(1-cos(om))/omsq + b*sin(om)/om
+    
+        m21 = a*b*(1-cos(om))/omsq + c*sin(om)/om
+        m22 = ((a**2+c**2)*cos(om) + b**2) / omsq
+        m23 = b*c*(1-cos(om))/omsq - a*sin(om)/om
+    
+        m31 = a*c*(1-cos(om))/omsq - b*sin(om)/om
+        m32 = b*c*(1-cos(om))/omsq + a*sin(om)/om
+        m33 = ((a**2+b**2)*cos(om) + c**2) / omsq
+
+        return np.array([[m11, m12, m13],
+                         [m21, m22, m23],
+                         [m31, m32, m33]])

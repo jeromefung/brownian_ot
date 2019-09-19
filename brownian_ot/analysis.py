@@ -44,7 +44,7 @@ def calc_cluster_displacements(trajectory, nsteps, cluster_frame = True,
     max_rows = n_pts - nsteps
     
     # calculate lab-frame displacments
-    lab_disps = (np.roll(trajectory[:, 0:3], nsteps, axis = 0)
+    lab_disps = (np.roll(trajectory[:, 0:3], -nsteps, axis = 0)
                  - trajectory[:,0:3])[:max_rows, :]
 
     # calculate each particle-frame unit vector in lab coordinates
@@ -81,7 +81,7 @@ def calc_axis_dot_prods(trajectory, nsteps, full_output = False):
     max_rows = n_pts - nsteps
         
     product = (trajectory[:, 3:] * np.roll(trajectory[:, 3:],
-                                           nsteps, axis = 0))[:max_rows ,:]
+                                           -nsteps, axis = 0))[:max_rows ,:]
 
     u1dotu1 = (product[:, 0:3]).sum(axis = 1)
     u2dotu2 = (product[:, 3:6]).sum(axis = 1)
@@ -102,7 +102,7 @@ def calc_axis_dot_prods(trajectory, nsteps, full_output = False):
 def calc_msd(trajectory, max_steps = None, cluster_frame = True):
     # set a sensible default, half the trajectory length if not given
     if max_steps is None:
-        max_steps = floor(trajectory.shape[0] / 2).astype('int')
+        max_steps = np.floor(trajectory.shape[0] / 2).astype('int')
         
     output = np.zeros((3, max_steps))
 
