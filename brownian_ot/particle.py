@@ -6,6 +6,8 @@ from numpy import sin, cos
 class Particle:
     '''
     Stores information about particle being simulated.
+
+    If self.kT is zero, D is interpreted as D/kT.
     '''
 
     def __init__(self, D, cod, f_ext, kT,
@@ -37,8 +39,11 @@ class Particle:
 
     
     def update(self, dt):
-        # calc q^B in particle frame with appropriate scaling
-        q_B = self._q_random() * np.sqrt(2 * dt)
+        if self.kT == 0:
+            q_B = np.zeros(6) # no brownian motion at 0 temperature
+        else:
+            # calc q^B in particle frame with appropriate scaling
+            q_B = self._q_random() * np.sqrt(2 * dt)
         
         # calc generalized force in lab frame
         force = self.f_ext(self.pos,
@@ -59,8 +64,12 @@ class Particle:
         force_pf = np.ravel(quaternion.rotate_vectors(self.orient.inverse(),
                                                       force.reshape((2, -1))))
 
-        # calculate q^D in particle frame
-        q_D = np.matmul(self.D, force_pf) / self.kT
+        if self.kT == 0:
+            # assume D is really D / kT (e.g., friction coefficients)
+            q_D = np.matmul(self.D, force_pf)
+        else:
+            # calculate q^D in particle frame
+            q_D = np.matmul(self.D, force_pf) / self.kT
 
         # find q_total
         q_total = q_B + q_D # still in particle frame

@@ -10,7 +10,8 @@ def run_simulation(particle, fnamebase,
     '''
 
     if save_int == 0:
-        file_len = n_steps
+        file_len = n_steps + 1
+        outfnumber = 0 # will be made 1 later
     else:
         file_len = save_int
 
