@@ -66,10 +66,10 @@ class Particle:
 
         if self.kT == 0:
             # assume D is really D / kT (e.g., friction coefficients)
-            q_D = np.matmul(self.D, force_pf)
+            q_D = np.matmul(self.D, force_pf) * dt
         else:
             # calculate q^D in particle frame
-            q_D = np.matmul(self.D, force_pf) / self.kT
+            q_D = np.matmul(self.D, force_pf) * dt / self.kT
 
         # find q_total
         q_total = q_B + q_D # still in particle frame
