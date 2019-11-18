@@ -61,7 +61,6 @@ coverage.xml
 *.mo
 *.pot
 
-
 # Scrapy stuff:
 .scrapy
 
@@ -113,3 +112,7 @@ dmypy.json
 .pyre/
 
 # End of https://www.gitignore.io/api/python
+
+# Config file
+paths_config.yaml
+

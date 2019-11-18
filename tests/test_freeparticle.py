@@ -20,7 +20,7 @@ def test_setup():
     
     # run simulation
     run_simulation(particle, 'my_simulation',
-                   n_steps = 10000, dt = 1e-5, save_int = 1000)
+                   n_steps = 10000, dt = 1e-5)
     #assert False
 
 

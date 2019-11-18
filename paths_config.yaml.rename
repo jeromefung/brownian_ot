@@ -1,0 +1,7 @@
+# Template for configuration file giving paths to external packages.
+# Users should copy this file, rename it to paths_config.yaml, and modify as needed.
+
+{
+    "ott_path" : "/home/your/path/to/ott/here",
+    "matlab_wrapper_path" : "/home/your/path/to/brownian_ot/wrappers/here"
+}
