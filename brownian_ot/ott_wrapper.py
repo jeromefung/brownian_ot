@@ -1,4 +1,5 @@
 import numpy as np
+from numpy import pi
 import matlab.engine
 import yaml
 import os
@@ -18,9 +19,12 @@ with open(config_fname, mode = 'r') as file:
 eng.addpath(config['ott_path'])
 eng.addpath(config['matlab_wrapper_path'])
 
-# TODO: unit conversion from efficiencies to real forces
+# Unit conversion from efficiencies to real forces:
+# force: multiply efficiency by P * n_med / c
+# torque: multiply by P / omega
 
-def make_sphere_force(lambda_0, pol, n_med, NA, power, n_p, r_p):
+def make_force(lambda_0, pol, n_med, NA, power, scatterer_type, scatterer_dict,
+               c = 3e8):
     '''
     Factory to return a function to calculate the optical force
     on a sphere.
@@ -30,13 +34,28 @@ def make_sphere_force(lambda_0, pol, n_med, NA, power, n_p, r_p):
     pol : 2-element list/ndarray (x and y components)
     n_med : medium index
     NA : objective numerical aperture
-    n_p : particle index
-    r_p : particle radius
+    power : beam power (in self-consistent units)
+    scatterer_type : 'sphere' or 'spheroid'
+    scatterer_dict : see below
+    c : speed of light in self-consistent units (default SI)
     '''
 
     eng.ott_beam(lambda_0, pol[0], pol[1], NA, n_med, nargout = 0)
-    eng.ott_tmatrix_sphere(n_p, r_p, lambda_0, n_med, nargout = 0)
+    if scatterer_type == 'sphere':
+        eng.ott_tmatrix_sphere(scatterer_dict['n_p'],
+                               scatterer_dict['r_p'],
+                               lambda_0, n_med, nargout = 0)
+    elif scatterer_type == 'spheroid':
+        eng.ott_matrix_spheroid(scatterer_dict['n_p'],
+                                scatterer_dict['a'],
+                                scatterer_dict['c'],
+                                lambda_0, n_med, nargout = 0)
+    else:
+        raise NotImplementedError('Other scatterers not yet implemented.')
 
+
+    omega = 2*pi*c/lambda_0 # angular frequency
+    
     def force(pos, rot_matrix):
         if isinstance(pos, np.ndarray):
             pos = pos.tolist()
@@ -50,8 +69,10 @@ def make_sphere_force(lambda_0, pol, n_med, NA, power, n_p, r_p):
 
         fx, fy, fz, tx, ty, tz = eng.ott_calc_force(pos, rot_matrix,
                                                     nargout = 6)
-        # TODO: fix normalization
-        return np.array([fx, fy, fz, tx, ty, tz])
+        # incident beam has unit power, so normalize correctly
+        return np.array([fx, fy, fz, tx, ty, tz]) * \
+            np.concatenate((n_med * power / c * np.ones(3),
+                            power / omega * np.ones(3)))
         
         
     return force
