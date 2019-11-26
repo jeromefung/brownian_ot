@@ -12,13 +12,15 @@ class Particle:
 
     def __init__(self, D, cod, f_ext, kT,
                  pos = np.zeros(3),
-                 orient = quaternion.quaternion(1,0,0,0)):
+                 orient = quaternion.quaternion(1,0,0,0),
+                 seed = None):
         self.D = D
         self.cod = cod
         self.f_ext = f_ext
         self.kT = kT
         self.pos = pos
         self.orient = orient # transforms PARTICLE to LAB frames
+        self.rng = np.random.RandomState(seed)
 
 
     def _q_random(self):
@@ -30,7 +32,7 @@ class Particle:
         Return array of random displacements, prior to rescaling.
         Need to scale by \sqrt(2 dt)
         '''
-        return np.random.multivariate_normal(np.zeros(6), self.D)
+        return self.rng.multivariate_normal(np.zeros(6), self.D)
 
     
     def _nice_output(self):
