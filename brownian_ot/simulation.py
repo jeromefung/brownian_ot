@@ -1,19 +1,25 @@
 import numpy as np
 
 
-def run_simulation(particle, fnamebase,
-                   n_steps, dt, save_int = 0):
+def run_simulation(particle, n_steps, dt,
+                   save = True, fnamebase = None, save_int = 0):
+
     '''
     Inputs:
     particle: instance of Particle class
     fnamebase: base filename
     '''
 
-    if save_int == 0:
+    # TODO: want to refactor to make saving to a file optional (makes
+    # testing easier)
+
+    if not save:
         file_len = n_steps + 1
-        outfnumber = 0 # will be made 1 later
     else:
-        file_len = save_int
+        if save_int == 0:
+            file_len = n_steps + 1
+        else:
+            file_len = save_int
 
         
     def preallocate():
@@ -29,11 +35,12 @@ def run_simulation(particle, fnamebase,
         # step the particle
         particle.update(dt)
 
-        if ctr % file_len == 0:
-            outfnumber = np.floor(ctr / file_len).astype('int')
-            outfname = fnamebase + str(outfnumber).zfill(4) + '.npy'
-            np.save(outfname, output)
-            output = preallocate()
+        if save:            
+            if ctr % file_len == 0:
+                outfnumber = np.floor(ctr / file_len).astype('int')
+                outfname = fnamebase + str(outfnumber).zfill(4) + '.npy'
+                np.save(outfname, output)
+                output = preallocate()
 
         output[ctr % file_len] = particle._nice_output()
         
@@ -41,8 +48,15 @@ def run_simulation(particle, fnamebase,
     # extract nonzero rows of output (e.g., nonzero unit quaternions)
     output = output[np.where(output.any(axis=1))[0]]
     # save for the last time
-    outfname = fnamebase + str(outfnumber + 1).zfill(4) + '.npy'
-    np.save(outfname, output)
+    if save:
+        if save_int == 0:
+            outfname = fnamebase + '.npy'
+        else:
+            outfname = fnamebase + str(outfnumber + 1).zfill(4) + '.npy'
+        np.save(outfname, output)
+
+
+    return output
     
                     
         

@@ -19,8 +19,8 @@ def test_setup():
                         f_ext = free_particle, kT = kT)
     
     # run simulation
-    run_simulation(particle, 'my_simulation',
-                   n_steps = 10000, dt = 1e-5)
+    run_simulation(particle,
+                   n_steps = 1000, dt = 1e-5, save = False)
     #assert False
 
 
