@@ -3,6 +3,7 @@ from numpy import pi, sin, cos
 from brownian_ot.particle import Particle, unbiased_rotation
 from brownian_ot.externalforce import free_particle
 from brownian_ot.simulation import run_simulation
+from brownian_ot.utils import sphere_D
 from numpy.testing import assert_allclose
 
 def test_setup():
@@ -10,10 +11,7 @@ def test_setup():
     kT = 1.38e-23*295
     a = 1e-6
 
-    D_t = kT / (6*pi*eta*a)
-    D_r = kT / (6*pi*eta*a**3)
-    
-    D_tensor = np.diag(np.array([D_t, D_t, D_t, D_r, D_r, D_r]))
+    D_tensor = sphere_D(a, kT, eta)
 
     particle = Particle(D = D_tensor, cod = np.zeros(3),
                         f_ext = free_particle, kT = kT)

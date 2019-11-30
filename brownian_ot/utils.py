@@ -5,6 +5,34 @@ Utility functions for Brownian dynamics simulations
 import numpy as np
 from numpy import sqrt, log, arctan, pi
 
+def sphere_D(a, kT, eta):
+    '''
+    Calculate diffusion tensor for a sphere.
+
+    Parameters
+    ----------
+    a : float
+        Particle radius.
+    kT : float
+        Temperature in energy units.
+    eta : float
+        Solvent viscosity
+
+    Returns
+    -------
+    array_like
+        Diffusion tensor
+    '''
+    D_t = 1/(6*pi*eta*a) # put in kT later if nonzero
+    D_r = 1/(8*pi*eta*a**3)
+    diffusion_tensor = np.diag([D_t, D_t, D_t, D_r, D_r, D_r])
+
+    if kT == 0:
+        return diffusion_tensor # with kT factored out
+    else:
+        return kT * diffusion_tensor 
+
+    
 def spheroid_D(a, c, kT, eta):
     '''
     Calculate diffusion tensor for a spheroid whose axis of rotational 

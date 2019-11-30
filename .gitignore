@@ -116,3 +116,6 @@ dmypy.json
 # Config file
 paths_config.yaml
 
+# OS X cruft
+*.DS_Store
+
