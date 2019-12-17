@@ -1,3 +1,7 @@
 numpy
 scipy
 quaternion
+pyyaml
+matlab.engine
+
+

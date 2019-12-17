@@ -46,10 +46,10 @@ def make_force(lambda_0, pol, n_med, NA, power, scatterer_type, scatterer_dict,
                                scatterer_dict['r_p'],
                                lambda_0, n_med, nargout = 0)
     elif scatterer_type == 'spheroid':
-        eng.ott_matrix_spheroid(scatterer_dict['n_p'],
-                                scatterer_dict['a'],
-                                scatterer_dict['c'],
-                                lambda_0, n_med, nargout = 0)
+        eng.ott_tmatrix_spheroid(scatterer_dict['n_p'],
+                                 scatterer_dict['a'],
+                                 scatterer_dict['c'],
+                                 lambda_0, n_med, nargout = 0)
     else:
         raise NotImplementedError('Other scatterers not yet implemented.')
 
