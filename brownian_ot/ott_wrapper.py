@@ -15,7 +15,9 @@ eng = matlab.engine.start_matlab()
 dir = os.path.dirname(__file__)
 config_fname = os.path.join(dir, '../paths_config.yaml')
 with open(config_fname, mode = 'r') as file:
-    config = yaml.load(file)
+    config = yaml.load(file, Loader = yaml.SafeLoader)
+    # plain load deprecated for security reasons
+    # see https://github.com/yaml/pyyaml/wiki/PyYAML-yaml.load(input)-Deprecation
 eng.addpath(config['ott_path'])
 eng.addpath(config['matlab_wrapper_path'])
 
