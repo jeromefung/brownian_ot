@@ -3,7 +3,7 @@ Utility functions for Brownian dynamics simulations
 '''
 
 import numpy as np
-from numpy import sqrt, log, arctan, pi
+from numpy import sqrt, log, arctan, pi, sin, cos
 
 def sphere_D(a, kT, eta):
     '''
@@ -70,4 +70,31 @@ def spheroid_D(a, c, kT, eta):
         return diffusion_tensor # divide out kT
     else:
         return kT * diffusion_tensor # normally, correct units
+
     
+def rot_x(theta):
+    '''
+    Calculate rotation matrix for rotation by theta about the x-axis.
+    Rotation angle theta is positive clockwise when viewed from the origin.
+    '''
+    return np.array([[1, 0, 0],
+                     [0, cos(theta), -sin(theta)],
+                     [0, sin(theta), cos(theta)]])
+    
+def rot_y(theta):
+    '''
+    Calculate rotation matrix for rotation by theta about the y-axis.
+    Rotation angle theta is positive clockwise when viewed from the origin.
+    '''
+    return np.array([[cos(theta), 0, sin(theta)],
+                     [0, 1, 0],
+                     [-sin(theta), 0, cos(theta)]])
+
+def rot_z(theta):
+    '''
+    Calculate rotation matrix for rotation by theta about the z-axis.
+    Rotation angle theta is positive clockwise when viewed from the origin.
+    '''
+    return np.array([[cos(theta), -sin(theta), 0],
+                     [sin(theta), cos(theta), 0],
+                     [0, 0, 1]])
