@@ -3,24 +3,38 @@ Mock up the use case for running a Brownian dynamics simulation of particle
 in OT.
 '''
 
-import numpy as np
+particle = Spheroid(a = 0.2e-6, ar = 1.5, n_p = 1.5)
 
-# set up external force
-# have ExternalForce be the base class
-# subclasses could be OpticalForce, FreeParticle
-# OpticalForce gets its own constructor, etc.
-ext_force = OpticalForce(tmatrix, power, n_med)
+# use a NamedTuple for this?
+# Python 3.7 has a DataClass object, which might actually be great for this,
+# but comet doesn't have 3.7 nor do I.
+# I'm less keen on using a straight dictionary, but I can't see the Beam
+# objects having any non-trivial methods. (It's going to get passed to ott
+# to create an ott beam object, where a lot of math happens)
+beam = Beam(lambda_0 = 1064e-9,
+            pol = np.array([1, 1j]),
+            NA = 1.2,
+            medium_index = 1.33,
+            power = 5e-3)
+
+# the main reason to make Simulation a class is to allow for inheritance
+# could have a base Simulation class
+# and also a FreeDiffusionSim that subclasses that,
+# and a OTSimulation class
+# By subclassing Simulation, and attaching a particular force model to it,
+# the user doesn't need to explicitly construct the force.
+
+sim = OTSimulation(particle, beam, kT = 295*1.38e-23,
+                   timestep = 1e-5, seed = 12345678,
+                   pos_0 = np.array([0, 0, 1.04103e-7]))
+
+sim.run(1000000, 'my_simulation_results.npy')
 
 
-# set up particle
-D_tensor = np.load('my_diffusion_tensor.npy')
-particle = Particle(D = D_tensor, cod = np.array([0,0,0]),
-                    f_ext = ext_force, kT = 295.)
-
-# set up simulation
-sim = Simulation(particle, ext_force, 'my_simulation',
-                 initial_pos = np.array([0,0,0]),
-                 initial_orient = np.identity(3),
-                 n_steps = 1e6, dt = 1e-5, save_int = 1000)
-
-sim.run()
+# Also, mock up a force calculation
+force_func = make_force(particle, beam)
+zs = np.linspace(-2e-6, 2e6, 201)
+f_z = calc_fz(zs, force_func)
+zeq = find_zeq(force_func)
+xs = np.linspace(-3e-6, 3e-6, 301)
+f_x = calc_fx(xs, force_func, z = zeq)
