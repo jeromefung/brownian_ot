@@ -10,18 +10,18 @@ class Particle:
     If self.kT is zero, D is interpreted as D/kT.
     '''
 
-    def __init__(self, D, cod, f_ext, kT,
+    def __init__(self, D, cod, kT, refractive_index = None
                  pos = np.zeros(3),
                  orient = quaternion.quaternion(1,0,0,0),
                  seed = None):
         self.D = D
-        self.cod = cod
-        self.f_ext = f_ext
+        self.cod = cod # center of diffusion
         self.kT = kT
         self.pos = pos
         self.orient = orient # transforms PARTICLE to LAB frames
-        self.rng = np.random.RandomState(seed)
-
+        self.rng = np.random.RandomState(seed) # Controllable seed for RNG
+        self.np = refractive_index
+        
 
     def _q_random(self):
         '''
@@ -40,17 +40,20 @@ class Particle:
                                quaternion.as_float_array(self.orient)))
 
     
-    def update(self, dt):
+    def update(self, dt, f_ext = None):
         if self.kT == 0:
             q_B = np.zeros(6) # no brownian motion at 0 temperature
         else:
             # calc q^B in particle frame with appropriate scaling
             q_B = self._q_random() * np.sqrt(2 * dt)
-        
-        # calc generalized force in lab frame
-        force = self.f_ext(self.pos,
-                           quaternion.as_rotation_matrix(self.orient))
 
+        if f_ext is None:
+            force = np.zeros(6) # free diffusion w/ no external force
+        else:
+            # calc generalized force in lab frame
+            force = self.f_ext(self.pos,
+                               quaternion.as_rotation_matrix(self.orient))
+            
         # find vector d from COM to COD, known in particle frame,
         # in lab frame.
         # quaternion package does this by converting quaternion

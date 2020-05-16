@@ -3,7 +3,8 @@ Mock up the use case for running a Brownian dynamics simulation of particle
 in OT.
 '''
 
-particle = Spheroid(a = 0.2e-6, ar = 1.5, n_p = 1.5)
+particle = Spheroid(a = 0.2e-6, ar = 1.5, n_p = 1.5,
+                    kT = 295*1.38e-23, viscosity = 1e-3)
 
 # use a NamedTuple for this?
 # Python 3.7 has a DataClass object, which might actually be great for this,
@@ -24,7 +25,7 @@ beam = Beam(lambda_0 = 1064e-9,
 # By subclassing Simulation, and attaching a particular force model to it,
 # the user doesn't need to explicitly construct the force.
 
-sim = OTSimulation(particle, beam, kT = 295*1.38e-23,
+sim = OTSimulation(particle, beam,
                    timestep = 1e-5, seed = 12345678,
                    pos_0 = np.array([0, 0, 1.04103e-7]))
 
