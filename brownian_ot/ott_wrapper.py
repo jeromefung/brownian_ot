@@ -85,20 +85,56 @@ def make_ots_force(particle, beam, c = 3e8):
 
 def make_mstm_input(particle, beam, save_name):
     mstm_length_scale_factor = 2 * pi * particle.a / beam.wavelen
-    
+
+    # mstm-modules-v3.0.f90 specifies defaults for many parameters
+    # in module spheredata.
+    # So, input deck doesn't need to specify them all.
+    # Also, order isn't critical. See loop in subroutine inputdata,
+    # line 1907.
     deck_file = open(save_name, 'w', encoding='utf-8')
     deck_file.write('number_spheres\n')
     deck_file.write(str(particle.n_spheres) + '\n')
     deck_file.write('sphere_position_file\n')
     deck_file.write('\n')
     deck_file.write('output_file\n')
-    deck_file.write('cluster_tmatrix.dat\n')
-    deck_file.write('append_output_file\n')
-    deck_file.write('0\n')
+    deck_file.write('cluster_output.dat\n')
     deck_file.write('run_print_file\n')
     deck_file.write('\n') # Leave blank for now, which writes to screen
     deck_file.write('length_scale_factor\n')
-    deck_file.write('{:.17f}\n'.format(mstm_length_scale_factor))
+    deck_file.write('{:.15f}\n'.format(mstm_length_scale_factor))
+    deck_file.write('real_ref_index_scale_factor\n')
+    deck_file.write('{:.15f}\n'.format(particle.a.real))
+    deck_file.write('imag_ref_index_scale_factor\n')
+    deck_file.write('{:.15f}\n'.format(particle.a.imag))
+    deck_file.write('mie_epsilon\n') # TODO: make epsilons user-controllable
+    deck_file.write('1.0d-6\n')
+    deck_file.write('translation_epsilon\n')
+    deck_file.write('1.0d-6\n')
+    deck_file.write('solution_epsilon\n')
+    deck_file.write('1.0d-8\n')
+    deck_file.write('max_number_iterations\n')
+    deck_file.write('5000\n')
+    deck_file.write('store_translation_matrix\n')
+    deck_file.write('0\n')
+    deck_file.write('sm_number_processors\n') # not using MPI
+    deck_file.write('1\n')
+    deck_file.write('iterations_per_correction\n')
+    deck_file.write('20\n')
+    deck_file.write('number_scattering_angles\n')
+    deck_file.write('0\n')
+    deck_file.write('fixed_or_random_orientation\n')
+    deck_file.write('1\n')
+    deck_file.write('calculate_t_matrix\n')
+    deck_file.write('1\n')
+    deck_file.write('t_matrix_file\n')
+    deck_file.write('cluster_tmatrix.dat\n')
+    deck_file.write('t_matrix_convergence_epsilon\n') #TODO: make settable
+    deck_file.write('1.d-7\n')
+    deck_file.write('sphere_sizes_and_positions\n')
+
+    # Iterate over array of sphere positions
+    for pos in particle.sphere_pos:
+        deck_file.write('1.d0 {:.15f} {:.15f} {:.15f} \n'.format(*pos))
 
     
     deck_file.close()

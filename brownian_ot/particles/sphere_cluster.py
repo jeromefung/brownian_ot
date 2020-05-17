@@ -17,9 +17,9 @@ class Dimer(Particle, SphereCluster):
                  seed = None):
         self.a = a
         self.n_spheres = 2
-        # Reference configuration
-        self.particle_pos = np.array([[0, 0, a],
-                                      [0, 0, -a]])
+        # Reference configuration in radius units
+        self.sphere_pos = np.array([[0, 0, 1],
+                                      [0, 0, -1]])
         
         super().__init__(dimer_D(a, kT, viscosity),
                          np.zeros(3),
