@@ -10,7 +10,7 @@ class Particle:
     If self.kT is zero, D is interpreted as D/kT.
     '''
 
-    def __init__(self, D, cod, kT, refractive_index = None
+    def __init__(self, D, cod, kT, refractive_index = None,
                  pos = np.zeros(3),
                  orient = quaternion.quaternion(1,0,0,0),
                  seed = None):
@@ -20,7 +20,7 @@ class Particle:
         self.pos = pos
         self.orient = orient # transforms PARTICLE to LAB frames
         self.rng = np.random.RandomState(seed) # Controllable seed for RNG
-        self.np = refractive_index
+        self.n_p = refractive_index
         
 
     def _q_random(self):

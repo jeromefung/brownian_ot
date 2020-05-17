@@ -71,6 +71,13 @@ def spheroid_D(a, c, kT, eta):
     else:
         return kT * diffusion_tensor # normally, correct units
 
+
+def dimer_D(a, kT, eta):
+    '''
+    Implement Nir/Acrivos analytic solution.
+    '''
+    # TODO: dummy implementation for now
+    return np.identity(6)
     
 def rot_x(theta):
     '''

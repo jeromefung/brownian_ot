@@ -15,6 +15,8 @@ class Spheroid(Particle):
         a: radius in x/y
         ar: aspect ratio
         '''
+        self.a = a
+        self.ar = ar
         super().__init__(spheroid_D(a, a * ar, kT, viscosity),
                          np.zeros(3),
                          kT = kT,

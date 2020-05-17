@@ -4,7 +4,8 @@ in OT.
 '''
 
 particle = Spheroid(a = 0.2e-6, ar = 1.5, n_p = 1.5,
-                    kT = 295*1.38e-23, viscosity = 1e-3)
+                    kT = 295*1.38e-23, viscosity = 1e-3,
+                    seed = 12345678, pos_0 = np.array([0, 0, 1.04103e-7])
 
 # use a NamedTuple for this?
 # Python 3.7 has a DataClass object, which might actually be great for this,
@@ -12,7 +13,7 @@ particle = Spheroid(a = 0.2e-6, ar = 1.5, n_p = 1.5,
 # I'm less keen on using a straight dictionary, but I can't see the Beam
 # objects having any non-trivial methods. (It's going to get passed to ott
 # to create an ott beam object, where a lot of math happens)
-beam = Beam(lambda_0 = 1064e-9,
+beam = Beam(wavelen = 1064e-9,
             pol = np.array([1, 1j]),
             NA = 1.2,
             medium_index = 1.33,
@@ -26,10 +27,9 @@ beam = Beam(lambda_0 = 1064e-9,
 # the user doesn't need to explicitly construct the force.
 
 sim = OTSimulation(particle, beam,
-                   timestep = 1e-5, seed = 12345678,
-                   pos_0 = np.array([0, 0, 1.04103e-7]))
+                   timestep = 1e-5)
 
-sim.run(1000000, 'my_simulation_results.npy')
+sim.run(1000000, 'my_simulation_results')
 
 
 # Also, mock up a force calculation

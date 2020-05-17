@@ -1,17 +1,26 @@
 import numpy as np
+import quaternion
+from .particle import Particle
+from brownian_ot.utils import dimer_D
 
-class SphereCluster(Particle):
+class SphereCluster():
     '''
-    abstract base class?
+    Base class -- implement mstm input deck here?
     '''
     pass
 
 
-class Dimer(Particle):
+class Dimer(Particle, SphereCluster):
     def __init__(self, a, refractive_index, viscosity, kT,
                  pos = np.zeros(3),
                  orient = quaternion.quaternion(1,0,0,0),
                  seed = None):
+        self.a = a
+        self.n_spheres = 2
+        # Reference configuration
+        self.particle_pos = np.array([[0, 0, a],
+                                      [0, 0, -a]])
+        
         super().__init__(dimer_D(a, kT, viscosity),
                          np.zeros(3),
                          kT = kT,

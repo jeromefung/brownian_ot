@@ -8,6 +8,7 @@ class Sphere(Particle):
                  pos = np.zeros(3),
                  orient = quaternion.quaternion(1,0,0,0),
                  seed = None):
+        self.a = a
         super().__init__(sphere_D(a, kT, viscosity),
                          np.zeros(3),
                          kT = kT,

@@ -3,6 +3,8 @@ from numpy import pi
 import matlab.engine
 import yaml
 import os
+import tempfile
+import shutil
 
 # TODO: some sort of graceful exception handling if importing matlab fails
 # Code should still be usable for other functionality if matlab engine not
@@ -25,33 +27,34 @@ eng.addpath(config['matlab_wrapper_path'])
 # force: multiply efficiency by P * n_med / c
 # torque: multiply by P / omega
 
-def make_force(lambda_0, pol, n_med, NA, power, scatterer_type, scatterer_dict,
-               c = 3e8):
+def make_ots_force(particle, beam, c = 3e8):
     '''
     Factory to return a function to calculate the optical force
-    on a sphere.
+    on a particle.
 
-    Inputs:
-    lambda_0 : vacuum wavelength
-    pol : 2-element list/ndarray (x and y components)
-    n_med : medium index
-    NA : objective numerical aperture
-    power : beam power (in self-consistent units)
-    scatterer_type : 'sphere' or 'spheroid'
-    scatterer_dict : see below
-    c : speed of light in self-consistent units (default SI)
+   
     '''
 
-    eng.ott_beam(lambda_0, pol[0], pol[1], NA, n_med, nargout = 0)
-    if scatterer_type == 'sphere':
-        eng.ott_tmatrix_sphere(scatterer_dict['n_p'],
-                               scatterer_dict['r_p'],
-                               lambda_0, n_med, nargout = 0)
-    elif scatterer_type == 'spheroid':
-        eng.ott_tmatrix_spheroid(scatterer_dict['n_p'],
-                                 scatterer_dict['a'],
-                                 scatterer_dict['c'],
-                                 lambda_0, n_med, nargout = 0)
+    eng.ott_beam(beam.lambda_0, beam.pol[0], beam.pol[1], beam.NA,
+                 beam.n_med, nargout = 0)
+
+    if isinstance(particle, Sphere):
+        eng.ott_tmatrix_sphere(particle.n_p, particle.a,
+                               beam.lambda_0, beam.n_med, nargout = 0)
+    elif isinstance(particle, Spheroid):
+        eng.ott_tmatrix_spheroid(particle.n_p, particle.a,
+                                 particle.a * particle.ar,
+                                 beam.lambda_0, beam.n_med, nargout = 0)
+    elif isinstance(particle, SphereCluster):
+        # create temporary directory
+        temp_dir = tempfile.mkdtemp()
+        # write mstm input deck
+        # TODO: make convergence criteria user-controllable w/defaults
+        make_mstm_input(particle, beam,
+                        os.path.join(temp_dir, 'cluster.inp'))
+        # run mstm
+        # call eng.ott_tmatrix_from_mstm to read in
+        # delete temp_dir
     else:
         raise NotImplementedError('Other scatterers not yet implemented.')
 
@@ -79,3 +82,24 @@ def make_force(lambda_0, pol, n_med, NA, power, scatterer_type, scatterer_dict,
         
     return force
 
+
+def make_mstm_input(particle, beam, save_name):
+    mstm_length_scale_factor = 2 * pi * particle.a / beam.wavelen
+    
+    deck_file = open(save_name, 'w', encoding='utf-8')
+    deck_file.write('number_spheres\n')
+    deck_file.write(str(particle.n_spheres) + '\n')
+    deck_file.write('sphere_position_file\n')
+    deck_file.write('\n')
+    deck_file.write('output_file\n')
+    deck_file.write('cluster_tmatrix.dat\n')
+    deck_file.write('append_output_file\n')
+    deck_file.write('0\n')
+    deck_file.write('run_print_file\n')
+    deck_file.write('\n') # Leave blank for now, which writes to screen
+    deck_file.write('length_scale_factor\n')
+    deck_file.write('{:.17f}\n'.format(mstm_length_scale_factor))
+
+    
+    deck_file.close()
+    return
