@@ -1,5 +1,5 @@
 import numpy as np
-
+from brownian_ot.ott_wrapper import make_ots_force
 
 class Simulation:
     '''

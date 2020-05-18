@@ -5,6 +5,8 @@ import yaml
 import os
 import tempfile
 import shutil
+import subprocess
+from brownian_ot.particles import Sphere, Spheroid, SphereCluster
 
 # TODO: some sort of graceful exception handling if importing matlab fails
 # Code should still be usable for other functionality if matlab engine not
@@ -32,34 +34,36 @@ def make_ots_force(particle, beam, c = 3e8):
     Factory to return a function to calculate the optical force
     on a particle.
 
-   
     '''
 
-    eng.ott_beam(beam.lambda_0, beam.pol[0], beam.pol[1], beam.NA,
-                 beam.n_med, nargout = 0)
+    eng.ott_beam(beam.wavelen, beam.pol[0], beam.pol[1], beam.NA,
+                 beam.medium_index, nargout = 0)
 
     if isinstance(particle, Sphere):
         eng.ott_tmatrix_sphere(particle.n_p, particle.a,
-                               beam.lambda_0, beam.n_med, nargout = 0)
+                               beam.wavelen, beam.medium_index, nargout = 0)
     elif isinstance(particle, Spheroid):
         eng.ott_tmatrix_spheroid(particle.n_p, particle.a,
                                  particle.a * particle.ar,
-                                 beam.lambda_0, beam.n_med, nargout = 0)
+                                 beam.wavelen, beam.medium_index, nargout = 0)
     elif isinstance(particle, SphereCluster):
         # create temporary directory
         temp_dir = tempfile.mkdtemp()
         # write mstm input deck
         # TODO: make convergence criteria user-controllable w/defaults
-        make_mstm_input(particle, beam,
-                        os.path.join(temp_dir, 'cluster.inp'))
+        _make_mstm_input(particle, beam,
+                         os.path.join(temp_dir, 'cluster.inp'))
         # run mstm
-        # call eng.ott_tmatrix_from_mstm to read in
-        # delete temp_dir
+        subprocess.run([config['mstm_executable_path'], 'cluster.inp'],
+                       cwd = temp_dir)
+        # could pipe stdout to a file? 
+        # call eng.ott_tmatrix_from_mstm to read tmatrix file
+        # temp_dir should get garbage-collected
     else:
         raise NotImplementedError('Other scatterers not yet implemented.')
 
 
-    omega = 2*pi*c/lambda_0 # angular frequency
+    omega = 2*pi*c/beam.wavelen # angular frequency
     
     def force(pos, rot_matrix):
         if isinstance(pos, np.ndarray):
@@ -76,14 +80,14 @@ def make_ots_force(particle, beam, c = 3e8):
                                                     nargout = 6)
         # incident beam has unit power, so normalize correctly
         return np.array([fx, fy, fz, tx, ty, tz]) * \
-            np.concatenate((n_med * power / c * np.ones(3),
-                            power / omega * np.ones(3)))
+            np.concatenate((n_med * beam.power / c * np.ones(3),
+                            beam.power / omega * np.ones(3)))
         
         
     return force
 
 
-def make_mstm_input(particle, beam, save_name):
+def _make_mstm_input(particle, beam, save_name):
     mstm_length_scale_factor = 2 * pi * particle.a / beam.wavelen
 
     # mstm-modules-v3.0.f90 specifies defaults for many parameters

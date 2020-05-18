@@ -5,7 +5,10 @@ from brownian_ot.utils import dimer_D
 
 class SphereCluster():
     '''
-    Base class -- implement mstm input deck here?
+    Base class -- or is there a better way to do this?
+    Want to have arbitrary user-defined SphereCluster objects
+    where users specify positions and a diffusion tensor,
+    but have subclasses for common cases.
     '''
     pass
 
