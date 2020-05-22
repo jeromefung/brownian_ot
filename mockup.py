@@ -34,7 +34,6 @@ sim = OTSimulation(particle1, beam, timestep = 1e-5,
 
 sim.run(1000000, 'my_simulation_results')
 
-# TODO: code should catch if there's a .npy extension
 
 
 # Use case #2: force calculation
@@ -52,7 +51,7 @@ particle2 = Sphere(a = particle1.equivalent_radius())
 sim2 = FreeDiffusionSim(particle2, timestep = 5e-4, viscosity = 1e-3,
                         kT = 295 * 1.38e-23, seed = 987654321)
 # default position0, orient0
-traj = sim2.run(10000) # don't save this automatically
+traj = sim2.run(10000) # don't save this
 
 
 
