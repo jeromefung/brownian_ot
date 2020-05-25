@@ -57,11 +57,12 @@ def make_ots_force(particle, beam, c = 3e8):
         subprocess.run([config['mstm_executable_path'], 'cluster.inp'],
                        cwd = temp_dir)
         # could pipe stdout to a file? 
-        # call eng.ott_tmatrix_from_mstm to read tmatrix file
+        # call eng.ott_tmatrix_from_mstm to read cluster_tmatrix.dat
+        eng.ott_tmatrix_from_mstm(os.path.join(temp_dir, 'cluster_tmatrix.dat'),
+                                  nargout = 0)
         # temp_dir should get garbage-collected
     else:
         raise NotImplementedError('Other scatterers not yet implemented.')
-
 
     omega = 2*pi*c/beam.wavelen # angular frequency
     

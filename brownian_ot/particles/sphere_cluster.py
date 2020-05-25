@@ -3,29 +3,37 @@ import quaternion
 from .particle import Particle
 from brownian_ot.utils import dimer_D
 
-class SphereCluster():
+class SphereCluster(Particle):
     '''
     Base class -- or is there a better way to do this?
     Want to have arbitrary user-defined SphereCluster objects
     where users specify positions and a diffusion tensor,
     but have subclasses for common cases.
     '''
-    pass
+    def __init__(self, sphere_pos, Ddim, cod, n_p = None):
+        '''
+        Must manually specify diffusion tensor and center of diffusion.
+
+        Parameters
+        ----------
+        sphere_pos : ndarray (n, 3)
+            Array of particle positions in reference configuration,
+            one row per particle.
+        '''
+        self.sphere_pos = sphere_pos
+        self.n_spheres = self.sphere_pos.shape[0]
+        super().__init__(Ddim, cod, n_p)
 
 
-class Dimer(Particle, SphereCluster):
-    def __init__(self, a, refractive_index, viscosity, kT,
-                 pos = np.zeros(3),
-                 orient = quaternion.quaternion(1,0,0,0),
-                 seed = None):
+class Dimer(SphereCluster):
+    def __init__(self, a, n_p = None):
         self.a = a
-        self.n_spheres = 2
         # Reference configuration in radius units
-        self.sphere_pos = np.array([[0, 0, 1],
-                                      [0, 0, -1]])
+        # Oriented along z axis
+        sphere_pos = np.array([[0, 0, 1],
+                               [0, 0, -1]])
         
-        super().__init__(dimer_D(a, kT, viscosity),
-                         np.zeros(3),
-                         kT = kT,
-                         refractive_index = refractive_index,
-                         pos = pos, orient = orient, seed = seed)
+        super().__init__(sphere_pos, dimer_D(a, 1, 1), np.zeros(3),
+                         n_p)
+        
+        

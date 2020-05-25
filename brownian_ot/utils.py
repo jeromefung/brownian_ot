@@ -74,10 +74,28 @@ def spheroid_D(a, c, kT, eta):
 
 def dimer_D(a, kT, eta):
     '''
-    Implement Nir/Acrivos analytic solution.
+    Calculate the diffusion tensor for a symmetric dimer using the
+    Nir & Acrivos analytic solution for the friction tensor (see Appendix of
+    J. Fluid Mech. 1973, pp. 209-223).
     '''
-    # TODO: dummy implementation for now
-    return np.identity(6)
+
+    # Friction tensor needs to be scaled by pi * eta * a, see Table 2 of paper
+    # So, diffusion tensor needs to be scaled by kT/(pi*eta*a)
+
+    # Numbers in Table 2; come from horrible integrals of bessel functions
+    fxx = 8.691
+    fzz = 8.691 - 0.951
+    txx = 29.92
+    tzz = 29.92 - 15.50
+
+    diffusion_tensor = np.diag(np.array([1/fxx, 1/fxx, 1/fzz,
+                                         1/txx, 1/txx, 1/tzz]))
+    # Scale
+    scale_factor = kT / (pi * eta) *np.diag(np.concatenate((a * np.ones(3),
+                                                            a**3 * np.ones(3))))
+    return scale_factor * diffusion_tensor
+
+
     
 def rot_x(theta):
     '''
