@@ -63,7 +63,8 @@ while ~feof(fileID)
   end     
 end
 
-Tmatrix = [secondQuad, firstQuad ; thirdQuad, fourthQuad];
+Tmatrix_data = [secondQuad, firstQuad ; thirdQuad, fourthQuad];
+Tmatrix = ott.Tmatrix(Tmatrix_data, 'scattered');
 
 fclose(fileID);
 
