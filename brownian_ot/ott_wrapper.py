@@ -37,15 +37,15 @@ def make_ots_force(particle, beam, c = 3e8):
     '''
 
     eng.ott_beam(beam.wavelen, beam.pol[0], beam.pol[1], beam.NA,
-                 beam.medium_index, nargout = 0)
+                 beam.n_med, nargout = 0)
 
     if isinstance(particle, Sphere):
         eng.ott_tmatrix_sphere(particle.n_p, particle.a,
-                               beam.wavelen, beam.medium_index, nargout = 0)
+                               beam.wavelen, beam.n_med, nargout = 0)
     elif isinstance(particle, Spheroid):
         eng.ott_tmatrix_spheroid(particle.n_p, particle.a,
                                  particle.a * particle.ar,
-                                 beam.wavelen, beam.medium_index, nargout = 0)
+                                 beam.wavelen, beam.n_med, nargout = 0)
     elif isinstance(particle, SphereCluster):
         # create temporary directory
         temp_dir = tempfile.mkdtemp()
@@ -80,7 +80,7 @@ def make_ots_force(particle, beam, c = 3e8):
                                                     nargout = 6)
         # incident beam has unit power, so normalize correctly
         return np.array([fx, fy, fz, tx, ty, tz]) * \
-            np.concatenate((n_med * beam.power / c * np.ones(3),
+            np.concatenate((beam.n_med * beam.power / c * np.ones(3),
                             beam.power / omega * np.ones(3)))
         
         

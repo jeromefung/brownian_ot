@@ -10,7 +10,7 @@ class Beam:
     This class interfaces with the ott beam object.
     '''
 
-    def __init__(self, wavelen, pol, NA, medium_index, power):
+    def __init__(self, wavelen, pol, NA, n_med, power):
         '''
         Parameters
         ----------
@@ -21,7 +21,7 @@ class Beam:
             Can be complex if polarization is elliptical.
         NA : float
             Objective lens numerical aperture.
-        medium_index : float
+        n_med : float
             Refractive index of medium surrounding particle.
         power : float
             Incident beam power.
@@ -29,9 +29,10 @@ class Beam:
         self.wavelen = wavelen
         self.pol = list(pol) # matlab doesn't play nicely with ndarrays
         self.NA = NA
-        self.n_med = medium_index
+        self.n_med = n_med
         self.power = power
-
-        # TODO: does ott require polarization vector to be normalized?
+        # Note: ott_beam.m sets beam power to 1 upon creation of ott beam object
+        # So polarization vector doesn't need to be normalized.
+        
 
 

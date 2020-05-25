@@ -20,7 +20,13 @@ class Simulation:
         if pos0 is not None:
             particle._pos = pos0
         if orient0 is not None:
-            particle._orient = orient0
+            # Be able to handle both a quaternion or a rotation matrix
+            if isinstance(orient0, quaternion.quaternion):
+                particle._orient = orient0
+            elif isinstance(orient0, np.ndarray) and orient0.shape == (3,3):
+                particle._orient = quaternion.from_rotation_matrix(orient0)
+            else:
+                raise TypeError('orient0 must be a quaternion or a 3 x 3 ndarray representing a rotation matrix')
         self.rng = np.random.RandomState(seed)
 
 
@@ -62,13 +68,13 @@ class Simulation:
 
         # convert generalized force from lab to particle frame
         # need inverse of orientation quaternion
-        force_pf = np.ravel(quaternion.rotate_vectors(self.orient.inverse(),
+        force_pf = np.ravel(quaternion.rotate_vectors(self.particle._orient.inverse(),
                                                       force.reshape((2, -1))))
         
         # Calculate q^D in particle frame
         # particle.Ddim has no kT in it
         q_D = np.matmul(self.particle.Ddim / self.viscosity,
-                        force_pf) * dt
+                        force_pf) * self.timestep
 
         # find q_total
         q_total = q_B + q_D # still in particle frame
@@ -85,9 +91,9 @@ class Simulation:
         infntsml_quat = quaternion.from_rotation_matrix(infntsml_rotmat)
         # see BROWNRIG paper eq. 19, use quaternion composition
         self.particle._orient = self.particle._orient * infntsml_quat
-      
+       
     
-    def run(self, nsteps, outfname = None):
+    def run(self, n_steps, outfname = None):
         # Preallocate
         file_len = n_steps + 1
         output = np.zeros((file_len, 7)) # com coords, quaternion
@@ -96,8 +102,8 @@ class Simulation:
         # main loop
         for ctr in np.arange(1, n_steps + 1):
             # step the particle
-            particle.update(dt, self.f_ext)
-            output[ctr] = particle._nice_output()
+            self._update()
+            output[ctr] = self.particle._nice_output()
 
         if outfname is not None:
             # Check if there's a .npy extension
@@ -111,14 +117,35 @@ class Simulation:
 class FreeDiffusionSimulation(Simulation):
     '''
     '''
-    def __init__(self, particle, timestep):
-        super().__init__(particle, timestep, None)
+    def __init__(self, particle, timestep,
+                 viscosity, kT, seed = None, pos0 = None, orient0 = None):
+        super().__init__(particle, timestep, np.zeros(6),
+                         viscosity, kT, seed, pos0, orient0)
 
         
 class OTSimulation(Simulation):
-    def __init__(self, particle, beam, timestep):
-        super().__init__(particle, timestep, make_ots_force(particle, beam))
+    def __init__(self, particle, beam, timestep,
+                 viscosity, kT, seed = None, pos0 = None, orient0 = None):
+        super().__init__(particle, timestep, make_ots_force(particle, beam),
+                         viscosity, kT, seed, pos0, orient0)
 
+
+class ConstantForceSimulation(Simulation):
+    '''
+    Performs simulations in which a particle experiences a constant
+    external generalized force.
+    '''
+    def __init__(self, particle, timestep, force,
+                 viscosity, kT, seed = None, pos0 = None, orient0 = None):
+        '''
+        Parameters
+        ----------
+        force: ndarray (6)
+            Generalized force vector (force + torque)
+        '''
+        super().__init__(particle, timestep, force,
+                        viscosity, kT, seed, pos0, orient0)
+        
 
 
 def unbiased_rotation(a, b, c):

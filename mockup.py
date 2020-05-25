@@ -4,7 +4,7 @@ in OT.
 '''
 
 # Use case #1: Brownian OT for a spheroid
-particle1 = Spheroid(a = 0.2e-6, ar = 1.5, refractive_index = 1.5)
+particle1 = Spheroid(a = 0.2e-6, ar = 1.5, n_p = 1.5)
 # Spheroids could have some methods like equiv_sphere_radius
 # or, a sphere cluster might have some specific attributes or similar methods
 # particle needs its own center of diffusion.
@@ -17,7 +17,7 @@ particle1 = Spheroid(a = 0.2e-6, ar = 1.5, refractive_index = 1.5)
 beam = Beam(wavelen = 1064e-9,
             pol = np.array([1, 1j]), # This should be legal!
             NA = 1.2,
-            medium_index = 1.33,
+            n_med = 1.33,
             power = 5e-3)
 
 sim = OTSimulation(particle1, beam, timestep = 1e-5,

@@ -1,6 +1,4 @@
 
-from .particle import Particle
-from .sphere import Sphere
-from .spheroid import Spheroid
+from .particle import Particle, Sphere, Spheroid
 from .sphere_cluster import SphereCluster, Dimer
 
