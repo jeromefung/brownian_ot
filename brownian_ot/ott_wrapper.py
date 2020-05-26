@@ -111,10 +111,14 @@ def _make_mstm_input(particle, beam, save_name):
     deck_file.write('{:.15f}\n'.format(particle.n_p.real))
     deck_file.write('imag_ref_index_scale_factor\n')
     deck_file.write('{:.15f}\n'.format(particle.n_p.imag))
+    deck_file.write('medium_real_ref_index\n')
+    deck_file.write('{:.15f}\n'.format(beam.n_med))
+    deck_file.write('medium_imag_ref_index\n')
+    deck_file.write('0.d0\n') # non-absorbing media only
     deck_file.write('mie_epsilon\n') # TODO: make epsilons user-controllable
-    deck_file.write('1.0d-6\n')
+    deck_file.write('1.0d-7\n')
     deck_file.write('translation_epsilon\n')
-    deck_file.write('1.0d-6\n')
+    deck_file.write('1.0d-8\n')
     deck_file.write('solution_epsilon\n')
     deck_file.write('1.0d-8\n')
     deck_file.write('max_number_iterations\n')
