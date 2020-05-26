@@ -1,6 +1,6 @@
 import numpy as np
 from numpy import sin, cos
-from brownian_ot.ott_wrapper import make_ots_force
+from brownian_ot.ott_wrapper import make_ott_force
 import quaternion
 
 class Simulation:
@@ -126,7 +126,7 @@ class FreeDiffusionSimulation(Simulation):
 class OTSimulation(Simulation):
     def __init__(self, particle, beam, timestep,
                  viscosity, kT, seed = None, pos0 = None, orient0 = None):
-        super().__init__(particle, timestep, make_ots_force(particle, beam),
+        super().__init__(particle, timestep, make_ott_force(particle, beam),
                          viscosity, kT, seed, pos0, orient0)
 
 

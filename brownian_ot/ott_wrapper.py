@@ -1,5 +1,6 @@
 import numpy as np
 from numpy import pi
+import warnings
 import matlab.engine
 import yaml
 import os
@@ -29,15 +30,15 @@ eng.addpath(config['matlab_wrapper_path'])
 # force: multiply efficiency by P * n_med / c
 # torque: multiply by P / omega
 
-def make_ots_force(particle, beam, c = 3e8):
+def make_ott_force(particle, beam, c = 3e8):
     '''
     Factory to return a function to calculate the optical force
     on a particle.
 
     '''
 
-    eng.ott_beam(beam.wavelen, beam.pol[0], beam.pol[1], beam.NA,
-                 beam.n_med, nargout = 0)
+    beam_nmax = eng.ott_beam(beam.wavelen, beam.pol[0], beam.pol[1], beam.NA,
+                             beam.n_med)
 
     if isinstance(particle, Sphere):
         eng.ott_tmatrix_sphere(particle.n_p, particle.a,
@@ -58,8 +59,13 @@ def make_ots_force(particle, beam, c = 3e8):
                        cwd = temp_dir)
         # could pipe stdout to a file? 
         # call eng.ott_tmatrix_from_mstm to read cluster_tmatrix.dat
-        eng.ott_tmatrix_from_mstm(os.path.join(temp_dir, 'cluster_tmatrix.dat'),
-                                  nargout = 0)
+        tmatrix_path = os.path.join(temp_dir, 'cluster_tmatrix.dat')
+        particle_nmax = eng.ott_tmatrix_from_mstm(tmatrix_path)
+        # TODO: do something beyond raising a warning
+        if beam_nmax < particle_nmax:
+            warnings.warn('ott beam n_max < mstm cluster n_max',
+                          RuntimeWarning)
+        
         # temp_dir should get garbage-collected
     else:
         raise NotImplementedError('Other scatterers not yet implemented.')

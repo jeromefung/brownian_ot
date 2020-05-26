@@ -37,7 +37,7 @@ sim.run(1000000, 'my_simulation_results')
 
 
 # Use case #2: force calculation
-force_func = make_ots_force(particle, beam) # associated w/specific particle and beam
+force_func = make_ott_force(particle, beam) # associated w/specific particle and beam
 zs = np.linspace(-2e-6, 2e6, 201)
 f_z = calc_fz(zs, force_func) # TODO: implement convenience function
 zeq = find_zeq(force_func) # TODO: implement convenience function

@@ -6,7 +6,7 @@ from brownian_ot.beam import Beam
 from brownian_ot.particles import Sphere, Spheroid
 from brownian_ot.particles.sphere_cluster import Dimer, SphereCluster
 from brownian_ot.simulation import OTSimulation
-from brownian_ot.ott_wrapper import make_ots_force
+from brownian_ot.ott_wrapper import make_ott_force
 from brownian_ot.utils import sphere_D
 from brownian_ot.force_utils import calc_fz
 
@@ -35,7 +35,7 @@ def test_dimer():
     sim.run(100)
 
 def test_force_calc():
-    force_func = make_ots_force(dimer, beam)
+    force_func = make_ott_force(dimer, beam)
     zs = np.linspace(-2e-6, 2e-6, 101)
     fz = calc_fz(zs, force_func)
     print(fz)
@@ -46,14 +46,14 @@ def test_sphere_ott_mstm():
     Compare optical force calculated using ott-generated sphere T-matrix
     to force calculated using mstm-generated T-matrix.
     '''
-    ott_force_func = make_ots_force(sphere, beam)
+    ott_force_func = make_ott_force(sphere, beam)
     ott_force = ott_force_func(np.zeros(3), np.identity(3))
 
     # Manually create a 1-sphere "cluster"
     pos = np.array([np.zeros(3)])
     cluster = SphereCluster(pos, sphere.Ddim, np.zeros(3),
                             sphere.a, sphere.n_p)
-    mstm_force_func = make_ots_force(cluster, beam)
+    mstm_force_func = make_ott_force(cluster, beam)
     mstm_force = mstm_force_func(np.zeros(3), np.identity(3))
 
     assert_allclose(mstm_force, ott_force, atol = 1e-15)
