@@ -119,7 +119,11 @@ class FreeDiffusionSimulation(Simulation):
     '''
     def __init__(self, particle, timestep,
                  viscosity, kT, seed = None, pos0 = None, orient0 = None):
-        super().__init__(particle, timestep, np.zeros(6),
+
+        def zero_force(pos, orient):
+            return np.zeros(6)
+
+        super().__init__(particle, timestep, zero_force,
                          viscosity, kT, seed, pos0, orient0)
 
         

@@ -1,9 +1,7 @@
 import numpy as np
 from numpy import pi, sin, cos
-from brownian_ot.particle import Particle, unbiased_rotation
-from brownian_ot.externalforce import free_particle
-from brownian_ot.simulation import run_simulation
-from brownian_ot.utils import sphere_D
+from brownian_ot.particles import Sphere
+from brownian_ot.simulation import FreeDiffusionSimulation, unbiased_rotation
 from numpy.testing import assert_allclose
 
 def test_setup():
@@ -11,15 +9,11 @@ def test_setup():
     kT = 1.38e-23*295
     a = 1e-6
 
-    D_tensor = sphere_D(a, kT, eta)
+    particle = Sphere(a)
+    sim = FreeDiffusionSimulation(particle, 1e-5, eta, kT, pos0 = np.zeros(3),
+                                  orient0 = np.identity(3))
+    sim.run(1000)
 
-    particle = Particle(D = D_tensor, cod = np.zeros(3),
-                        f_ext = free_particle, kT = kT)
-    
-    # run simulation
-    run_simulation(particle,
-                   n_steps = 1000, dt = 1e-5, save = False)
-    #assert False
 
 
 def test_unbiased_rotation():
