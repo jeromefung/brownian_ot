@@ -15,4 +15,4 @@ pol = [pol_x, pol_y]; % Matlab engine can't pass numpy arrays
 beam_obj = ott.BscPmGauss('NA', NA, 'polarisation', double(pol), ...
     'index_medium', n_med, 'wavelength0', lambda_0);
 beam_obj.power = 1.0; % Normalize the beam power
-beam_nmax = beam_obj.Nmax
+beam_nmax = beam_obj.Nmax ;

@@ -1,4 +1,5 @@
 import numpy as np
+
 import quaternion
 from .particle import Particle
 from brownian_ot.utils import dimer_D
@@ -24,6 +25,10 @@ class SphereCluster(Particle):
         self.n_spheres = self.sphere_pos.shape[0]
         self.a = a
         super().__init__(Ddim, cod, n_p)
+
+    @property
+    def equivalent_sphere_radius(self):
+        return (self.n_spheres * self.a**3)**(1/3)
 
 
 class Dimer(SphereCluster):

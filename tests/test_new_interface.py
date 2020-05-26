@@ -14,6 +14,7 @@ from brownian_ot.force_utils import calc_fz
 spheroid = Spheroid(a = 0.2e-6, ar = 1.5, n_p = 1.5)
 sphere = Sphere(a = 0.6e-6, n_p = 1.45+0.01j)
 dimer = Dimer(0.5e-6, 1.4)
+small_dimer = Dimer(0.015e-6, 1.4)
 
 beam = Beam(wavelen = 1064e-9, pol = [1, 1j], NA = 1.2,
             n_med = 1.33, power = 5e-3)
@@ -34,11 +35,21 @@ def test_dimer():
                        orient0 = np.identity(3))
     sim.run(100)
 
-def test_force_calc():
-    force_func = make_ott_force(dimer, beam)
+    
+def test_dimer_force_calc():
+    '''
+    Check force calculations for a Rayleigh-sized dimer.
+    In particular, check that F_z for the dimer is close to that obtained
+    for a sphere of the same volume.
+    '''
+    dimer_force_func = make_ott_force(small_dimer, beam)
     zs = np.linspace(-2e-6, 2e-6, 101)
-    fz = calc_fz(zs, force_func)
-    print(fz)
+    dimer_fz = calc_fz(zs, dimer_force_func)
+    equiv_sphere = Sphere(a = small_dimer.equivalent_sphere_radius,
+                          n_p = small_dimer.n_p)
+    equiv_sphere_force_func = make_ott_force(equiv_sphere, beam)
+    sphere_fz = calc_fz(zs, equiv_sphere_force_func)
+    assert_allclose(dimer_fz, sphere_fz, atol = 1e-15)
 
     
 def test_sphere_ott_mstm():

@@ -92,4 +92,8 @@ class Spheroid(Particle):
         self.ar = ar
         super().__init__(spheroid_D(a, a * ar, 1, 1),
                          np.zeros(3), n_p = n_p)
+
+    @property
+    def equivalent_sphere_radius(self):
+        return (self.a**3 * self.ar)**(1/3)
         
