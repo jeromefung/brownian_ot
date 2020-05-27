@@ -1,0 +1,5 @@
+.. _setup:
+
+Getting Started
+===============
+

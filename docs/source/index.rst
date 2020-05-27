@@ -6,9 +6,14 @@
 Welcome to brownian_ot's documentation!
 =======================================
 
+.. include:: ../../README.rst
+
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+
+   users/index
+
+   	     
 
 
 
