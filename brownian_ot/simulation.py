@@ -147,7 +147,14 @@ class ConstantForceSimulation(Simulation):
         force: ndarray (6)
             Generalized force vector (force + torque)
         '''
-        super().__init__(particle, timestep, force,
+        def const_force(pos, orient):
+            '''
+            Dummy input variables, but update method expects a callable
+            function.
+            '''
+            return force
+
+        super().__init__(particle, timestep, const_force,
                         viscosity, kT, seed, pos0, orient0)
         
 
