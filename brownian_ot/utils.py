@@ -27,10 +27,7 @@ def sphere_D(a, kT, eta):
     D_r = 1/(8*pi*eta*a**3)
     diffusion_tensor = np.diag([D_t, D_t, D_t, D_r, D_r, D_r])
 
-    if kT == 0:
-        return diffusion_tensor # with kT factored out
-    else:
-        return kT * diffusion_tensor 
+    return kT * diffusion_tensor 
 
     
 def spheroid_D(a, c, kT, eta):
@@ -66,10 +63,7 @@ def spheroid_D(a, c, kT, eta):
     # D = kT / f, but put in kT at the end
     diffusion_tensor = np.diag(np.array([1/f_xy, 1/f_xy, 1/f_z,
                                          1/c_xy, 1/c_xy, 1/c_z]))
-    if kT == 0:
-        return diffusion_tensor # divide out kT
-    else:
-        return kT * diffusion_tensor # normally, correct units
+    return kT * diffusion_tensor 
 
 
 def dimer_D(a, kT, eta):

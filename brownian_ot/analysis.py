@@ -28,18 +28,14 @@ def expand_trajectory(traj):
     return output
 
 
-def calc_cluster_displacements(trajectory, nsteps, cluster_frame = True,
-                               full_output = False):
+def _calc_cluster_displacements(trajectory, nsteps, cluster_frame = True,
+                                full_output = False):
     '''
     Calculate cluster-frame squared displacements (for evaluating
     diagonal elements of the diffusion tensor) as well as axis
     autocorrelations.
 
-    '''
-
-    if trajectory.shape[1] == 7: # orientation still in quaternion form
-        trajectory = expand_trajectory(trajectory)
-    
+    '''    
     n_pts = trajectory.shape[0]
     max_rows = n_pts - nsteps
     
@@ -73,10 +69,7 @@ def calc_cluster_displacements(trajectory, nsteps, cluster_frame = True,
                          np.mean(deltax_3**2)])
     
 
-def calc_axis_dot_prods(trajectory, nsteps, full_output = False):
-    if trajectory.shape[1] == 7: # orientation still in quaternion form
-        trajectory = expand_trajectory(trajectory)
-
+def _calc_axis_dot_prods(trajectory, nsteps, full_output = False):
     n_pts = trajectory.shape[0]
     max_rows = n_pts - nsteps
         
@@ -103,13 +96,16 @@ def calc_msd(trajectory, max_steps = None, cluster_frame = True):
     # set a sensible default, half the trajectory length if not given
     if max_steps is None:
         max_steps = np.floor(trajectory.shape[0] / 2).astype('int')
-        
+
+    if trajectory.shape[1] == 7: # orientation still in quaternion form
+        trajectory = expand_trajectory(trajectory)
+ 
     output = np.zeros((3, max_steps))
 
     for i in np.arange(1, max_steps + 1):
-        output[:, i - 1] = calc_cluster_displacements(trajectory, i,
-                                                      cluster_frame =
-                                                      cluster_frame)
+        output[:, i - 1] = _calc_cluster_displacements(trajectory, i,
+                                                       cluster_frame =
+                                                       cluster_frame)
 
     return output[0], output[1], output[2]
 
@@ -118,11 +114,14 @@ def calc_axis_autocorr(trajectory, max_steps = None):
     # set a sensible default, half the trajectory length if not given
     if max_steps is None:
         max_steps = floor(trajectory.shape[0] / 2).astype('int')
-        
+
+    if trajectory.shape[1] == 7: # orientation still in quaternion form
+        trajectory = expand_trajectory(trajectory)
+    
     output = np.zeros((3, max_steps))
 
     for i in np.arange(1, max_steps + 1):
-        output[:, i - 1] = calc_axis_dot_prods(trajectory, i)
+        output[:, i - 1] = _calc_axis_dot_prods(trajectory, i)
 
     return output[0], output[1], output[2]
 

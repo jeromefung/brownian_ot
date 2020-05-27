@@ -1,12 +1,14 @@
 import numpy as np
-from numpy import pi, sin, cos
-from brownian_ot.particles import Sphere
+from numpy import pi, sin, cos, exp
+from brownian_ot.particles import Sphere, Spheroid
 from brownian_ot.simulation import FreeDiffusionSimulation, unbiased_rotation
 from numpy.testing import assert_allclose
+from brownian_ot.analysis import calc_msd, calc_axis_autocorr
+
+eta = 1e-3 # Pa s, water
+kT = 1.38e-23*295
 
 def test_setup():
-    eta = 1e-3 # Pa s, water
-    kT = 1.38e-23*295
     a = 1e-6
 
     particle = Sphere(a)
@@ -48,4 +50,34 @@ def test_unbiased_rotation():
                     atol = 1e-6, rtol = 1e-6) # they aren't exactly equal
     
 
+def test_spheroid_diffusion():
+    '''
+    Test angular quantities from the diffusion of a spheroid.
+    '''
+    a = 2e-8 # 20 nm minor radius
+    ar = 5
+    spheroid = Spheroid(a, ar)
+    dt = 1e-5
+    n_steps = 5000
+    sim = FreeDiffusionSimulation(spheroid, dt, eta, kT, seed = 987654321,
+                                  pos0 = np.zeros(3), orient0 = np.identity(3))
+    traj = sim.run(n_steps)
+    clstr_msd_x, clstr_msd_y, clstr_msd_z = calc_msd(traj, max_steps = 5,
+                                                     cluster_frame = True)
+    axis_x, axis_y, axis_z = calc_axis_autocorr(traj, max_steps = 5)
+
+    D = np.diag(spheroid.Ddim * kT / eta)
+    tbase = (np.arange(5) + 1) * dt
+    # There's going to be statistical fluctuation in the MSDs and
+    # axis autocorrelations.
+    # Roughly, expect at least n_steps / 5 independent measurements,
+    # so a fractional uncertainty of 1/sqrt(n_steps/5)
+    estimated_tol = 1/np.sqrt(n_steps/5) * 1.2 # fudge factor
+    
+    assert_allclose(clstr_msd_x, 2 * D[0] * tbase, rtol = estimated_tol)
+    assert_allclose(clstr_msd_y, 2 * D[1] * tbase, rtol = estimated_tol)
+    assert_allclose(clstr_msd_z, 2 * D[2] * tbase, rtol = estimated_tol)
+    assert_allclose(axis_x, exp(-(D[4] + D[5])*tbase), rtol = estimated_tol)
+    assert_allclose(axis_y, exp(-(D[3] + D[5])*tbase), rtol = estimated_tol)
+    assert_allclose(axis_z, exp(-(D[3] + D[4])*tbase), rtol = estimated_tol)
 

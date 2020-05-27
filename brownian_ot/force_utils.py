@@ -58,7 +58,7 @@ def calc_tx(thetas, force_function, z = 0):
     z = z rotated by by different angles about the x axis.
     '''
     # A loop is needed because of the matlab interface
-    if isinstance(thetass, (list, np.ndarray)):
+    if isinstance(thetas, (list, np.ndarray)):
         output = np.array([force_function(np.array([0, 0, z]),
                                           rot_x(theta))[3] for theta in thetas])
     else: # a scalar
@@ -73,7 +73,7 @@ def calc_ty(thetas, force_function, z = 0):
     z = z rotated by by different angles about the y axis.
     '''
     # A loop is needed because of the matlab interface
-    if isinstance(thetass, (list, np.ndarray)):
+    if isinstance(thetas, (list, np.ndarray)):
         output = np.array([force_function(np.array([0, 0, z]),
                                           rot_y(theta))[4] for theta in thetas])
     else: # a scalar
