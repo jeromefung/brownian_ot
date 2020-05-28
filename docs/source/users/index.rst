@@ -8,3 +8,5 @@ User Guide
     :maxdepth: 1
 
     setup
+    bd_tutorial
+    
