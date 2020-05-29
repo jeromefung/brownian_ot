@@ -1,8 +1,13 @@
 import numpy as np
 from numpy import pi
+import warnings
 import matlab.engine
 import yaml
 import os
+import tempfile
+import shutil
+import subprocess
+from brownian_ot.particles import Sphere, Spheroid, SphereCluster
 
 # TODO: some sort of graceful exception handling if importing matlab fails
 # Code should still be usable for other functionality if matlab engine not
@@ -25,40 +30,78 @@ eng.addpath(config['matlab_wrapper_path'])
 # force: multiply efficiency by P * n_med / c
 # torque: multiply by P / omega
 
-def make_force(lambda_0, pol, n_med, NA, power, scatterer_type, scatterer_dict,
-               c = 3e8):
+def make_ott_force(particle, beam, c = 3e8):
     '''
-    Factory to return a function to calculate the optical force
-    on a sphere.
+    Factory function that returns a function to calculate the optical force
+    on a particle.
 
-    Inputs:
-    lambda_0 : vacuum wavelength
-    pol : 2-element list/ndarray (x and y components)
-    n_med : medium index
-    NA : objective numerical aperture
-    power : beam power (in self-consistent units)
-    scatterer_type : 'sphere' or 'spheroid'
-    scatterer_dict : see below
-    c : speed of light in self-consistent units (default SI)
+    Parameters
+    ----------
+    particle : `Particle` object
+        The particle experiencing the force.
+    beam : `Beam` object
+        The incident beam.
+    c : float, optional
+        The speed of light. The default value assumes SI units. Change
+        this if you want to use any other self-consistent unit system.
+
+    Returns
+    -------
+    force_func : function
+        Function that calculates optical forces and torques.
     '''
 
-    eng.ott_beam(lambda_0, pol[0], pol[1], NA, n_med, nargout = 0)
-    if scatterer_type == 'sphere':
-        eng.ott_tmatrix_sphere(scatterer_dict['n_p'],
-                               scatterer_dict['r_p'],
-                               lambda_0, n_med, nargout = 0)
-    elif scatterer_type == 'spheroid':
-        eng.ott_tmatrix_spheroid(scatterer_dict['n_p'],
-                                 scatterer_dict['a'],
-                                 scatterer_dict['c'],
-                                 lambda_0, n_med, nargout = 0)
+    beam_nmax = eng.ott_beam(beam.wavelen, beam.pol[0], beam.pol[1], beam.NA,
+                             beam.n_med)
+
+    if isinstance(particle, Sphere):
+        eng.ott_tmatrix_sphere(particle.n_p, particle.a,
+                               beam.wavelen, beam.n_med, nargout = 0)
+    elif isinstance(particle, Spheroid):
+        eng.ott_tmatrix_spheroid(particle.n_p, particle.a,
+                                 particle.a * particle.ar,
+                                 beam.wavelen, beam.n_med, nargout = 0)
+    elif isinstance(particle, SphereCluster):
+        # create temporary directory
+        temp_dir = tempfile.mkdtemp()
+        # write mstm input deck
+        # TODO: make convergence criteria user-controllable w/defaults
+        _make_mstm_input(particle, beam,
+                         os.path.join(temp_dir, 'cluster.inp'))
+        # run mstm
+        subprocess.run([config['mstm_executable_path'], 'cluster.inp'],
+                       cwd = temp_dir)
+        # could pipe stdout to a file? 
+        # call eng.ott_tmatrix_from_mstm to read cluster_tmatrix.dat
+        tmatrix_path = os.path.join(temp_dir, 'cluster_tmatrix.dat')
+        particle_nmax = eng.ott_tmatrix_from_mstm(tmatrix_path)
+        # TODO: do something beyond raising a warning
+        if beam_nmax < particle_nmax:
+            warnings.warn('ott beam n_max < mstm cluster n_max',
+                          RuntimeWarning)
+        
+        # temp_dir should get garbage-collected
     else:
         raise NotImplementedError('Other scatterers not yet implemented.')
 
-
-    omega = 2*pi*c/lambda_0 # angular frequency
+    omega = 2*pi*c/beam.wavelen # angular frequency
     
     def force(pos, rot_matrix):
+        '''
+        Calculates generalized optical force on a particle.
+
+        Parameters
+        ----------
+        pos : list or ndarray (3)
+            Coordinates of particle center of mass.
+        rot_matrix : list or ndarray (3,3)
+            Rotation matrix describing particle orientation.
+
+        Returns
+        -------
+        force : ndarray (6)
+            Generalized force (force + torque).
+        '''
         if isinstance(pos, np.ndarray):
             pos = pos.tolist()
 
@@ -73,9 +116,70 @@ def make_force(lambda_0, pol, n_med, NA, power, scatterer_type, scatterer_dict,
                                                     nargout = 6)
         # incident beam has unit power, so normalize correctly
         return np.array([fx, fy, fz, tx, ty, tz]) * \
-            np.concatenate((n_med * power / c * np.ones(3),
-                            power / omega * np.ones(3)))
+            np.concatenate((beam.n_med * beam.power / c * np.ones(3),
+                            beam.power / omega * np.ones(3)))
         
         
     return force
 
+
+def _make_mstm_input(particle, beam, save_name):
+    mstm_length_scale_factor = 2 * pi * particle.a / beam.wavelen
+
+    # mstm-modules-v3.0.f90 specifies defaults for many parameters
+    # in module spheredata.
+    # So, input deck doesn't need to specify them all.
+    # Also, order isn't critical. See loop in subroutine inputdata,
+    # line 1907.
+    deck_file = open(save_name, 'w', encoding='utf-8')
+    deck_file.write('number_spheres\n')
+    deck_file.write(str(particle.n_spheres) + '\n')
+    deck_file.write('sphere_position_file\n')
+    deck_file.write('\n')
+    deck_file.write('output_file\n')
+    deck_file.write('cluster_output.dat\n')
+    deck_file.write('run_print_file\n')
+    deck_file.write('\n') # Leave blank for now, which writes to screen
+    deck_file.write('length_scale_factor\n')
+    deck_file.write('{:.15f}\n'.format(mstm_length_scale_factor))
+    deck_file.write('real_ref_index_scale_factor\n')
+    deck_file.write('{:.15f}\n'.format(particle.n_p.real))
+    deck_file.write('imag_ref_index_scale_factor\n')
+    deck_file.write('{:.15f}\n'.format(particle.n_p.imag))
+    deck_file.write('medium_real_ref_index\n')
+    deck_file.write('{:.15f}\n'.format(beam.n_med))
+    deck_file.write('medium_imag_ref_index\n')
+    deck_file.write('0.d0\n') # non-absorbing media only
+    deck_file.write('mie_epsilon\n') # TODO: make epsilons user-controllable
+    deck_file.write('1.0d-7\n')
+    deck_file.write('translation_epsilon\n')
+    deck_file.write('1.0d-8\n')
+    deck_file.write('solution_epsilon\n')
+    deck_file.write('1.0d-8\n')
+    deck_file.write('max_number_iterations\n')
+    deck_file.write('5000\n')
+    deck_file.write('store_translation_matrix\n')
+    deck_file.write('0\n')
+    deck_file.write('sm_number_processors\n') # not using MPI
+    deck_file.write('1\n')
+    deck_file.write('iterations_per_correction\n')
+    deck_file.write('20\n')
+    deck_file.write('number_scattering_angles\n')
+    deck_file.write('0\n')
+    deck_file.write('fixed_or_random_orientation\n')
+    deck_file.write('1\n')
+    deck_file.write('calculate_t_matrix\n')
+    deck_file.write('1\n')
+    deck_file.write('t_matrix_file\n')
+    deck_file.write('cluster_tmatrix.dat\n')
+    deck_file.write('t_matrix_convergence_epsilon\n') #TODO: make settable
+    deck_file.write('1.d-7\n')
+    deck_file.write('sphere_sizes_and_positions\n')
+
+    # Iterate over array of sphere positions
+    for pos in particle.sphere_pos:
+        deck_file.write('1.d0 {:.15f} {:.15f} {:.15f} \n'.format(*pos))
+
+    
+    deck_file.close()
+    return

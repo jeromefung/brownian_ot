@@ -1,0 +1,56 @@
+\documentclass[12pt]{standalone}
+\usepackage{tikz}
+\usepackage{tikz-3dplot}
+
+\begin{document}
+\tdplotsetmaincoords{75}{30}
+\begin{tikzpicture}[tdplot_main_coords, line join = bevel, fill opacity = 0.7]
+
+   \tdplotsphericalsurfaceplot{72}{36}
+   {0.5/sqrt(1 - (sqrt(3) /2 * cos(\tdplottheta))^2)}{black}{blue!50!white} % polar eqn for ellipse with aspect ratio 2, eccentricity sqrt(3)/2
+   {\draw[thick, ->] (0, 0, 0) -- (2, 0, 0) node[right]{$x$};}
+   {\draw[thick, ->] (0, 0, 0) -- (0, 2, 0) node[above right]{$y$};}
+   {\draw[thick, ->] (0, 0, 0) -- (0, 0, 2) node[above]{$z$};}
+   
+   \node[tdplot_screen_coords,fill opacity=1] at (0,-2) {(a) Spheroid};
+  
+
+\end{tikzpicture}
+\begin{tikzpicture}[tdplot_main_coords, line join = bevel, fill opacity = 0.7]
+   \tdplotsphericalsurfaceplot{72}{36}
+   {abs(cos(\tdplottheta))}{black}{blue!50!white}
+   {\draw[thick, ->] (0, 0, 0) -- (2, 0, 0) node[right]{$x$};}
+   {\draw[thick, ->] (0, 0, 0) -- (0, 2, 0) node[above right]{$y$};}
+   {\draw[thick, ->] (0, 0, 0) -- (0, 0, 2) node[above]{$z$};}
+   
+   \node[tdplot_screen_coords,fill opacity=1] at (0,-2) {(b) Dimer};
+
+\end{tikzpicture}
+
+% Despite trying, I can't get \tdplotsphericalsurfaceplot to work with rotated coordinates.
+%\begin{tikzpicture}[tdplot_main_coords, line join = bevel, fill opacity = 0.7]
+%   \draw[thick, ->] (0, 0, 0) -- (2, 0, 0) node[right]{$x$};
+%   \draw[thick, ->] (0, 0, 0) -- (0, 2, 0) node[above right]{$y$};
+%   \draw[thick, ->] (0, 0, 0) -- (0, 0, 2) node[above]{$z$};
+% \tdplotsetrotatedcoords{0}{45}{0}
+%\draw[thick,color=blue,->, tdplot_rotated_coords] (0,0,0) --(3,0,0) node[anchor=north]{$x’$};
+%   \tdplotsphericalsurfaceplot[tdplot_rotated_coords]{72}{36}
+%   {abs(cos(\tdplottheta))}{black}{blue}
+%   {}{}{}
+%   \node[tdplot_screen_coords,fill opacity=1] at (0,-2) {(c) Dimer, after rotation};
+%\end{tikzpicture}  
+
+%\begin{tikzpicture}[tdplot_main_coords]
+%\draw[thick,->] (0,0,0) -- (1,0,0) node[anchor=north east]{$x$};
+%\draw[thick,->] (0,0,0) -- (0,1,0) node[anchor=north west]{$y$};
+%\draw[thick,->] (0,0,0) -- (0,0,1) node[anchor=south]{$z$};
+%\tdplotsetrotatedcoords{0}{45}{0}
+%\draw[thick,color=blue,tdplot_rotated_coords,->] (0,0,0) --(.7,0,0) node[anchor=north]{$x’$};
+%\draw[thick,color=blue,tdplot_rotated_coords,->] (0,0,0) --(0,.7,0) node[anchor=west]{$y’$};
+%\draw[thick,color=blue,tdplot_rotated_coords,->] (0,0,0) --(0,0,.7) node[anchor=south]{$z’$};
+%\end{tikzpicture}
+
+
+
+
+\end{document}

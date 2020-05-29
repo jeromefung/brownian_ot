@@ -3,5 +3,6 @@
 
 {
     "ott_path" : "/home/your/path/to/ott/here",
-    "matlab_wrapper_path" : "/home/your/path/to/brownian_ot/wrappers/here"
+    "matlab_wrapper_path" : "/home/your/path/here/to/brownian_ot/matlab/",
+    "mstm_executable_path" : "/home/your/path/to/mstm/executable/here"
 }

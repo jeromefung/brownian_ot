@@ -1,25 +1,21 @@
 import numpy as np
-from numpy import pi, sin, cos
-from brownian_ot.particle import Particle, unbiased_rotation
-from brownian_ot.externalforce import free_particle
-from brownian_ot.simulation import run_simulation
-from brownian_ot.utils import sphere_D
+from numpy import pi, sin, cos, exp
+from brownian_ot.particles import Sphere, Spheroid
+from brownian_ot.simulation import FreeDiffusionSimulation, unbiased_rotation
 from numpy.testing import assert_allclose
+from brownian_ot.analysis import calc_msd, calc_axis_autocorr
+
+eta = 1e-3 # Pa s, water
+kT = 1.38e-23*295
 
 def test_setup():
-    eta = 1e-3 # Pa s, water
-    kT = 1.38e-23*295
     a = 1e-6
 
-    D_tensor = sphere_D(a, kT, eta)
+    particle = Sphere(a)
+    sim = FreeDiffusionSimulation(particle, 1e-5, eta, kT, pos0 = np.zeros(3),
+                                  orient0 = np.identity(3))
+    sim.run(1000)
 
-    particle = Particle(D = D_tensor, cod = np.zeros(3),
-                        f_ext = free_particle, kT = kT)
-    
-    # run simulation
-    run_simulation(particle,
-                   n_steps = 1000, dt = 1e-5, save = False)
-    #assert False
 
 
 def test_unbiased_rotation():
@@ -54,4 +50,34 @@ def test_unbiased_rotation():
                     atol = 1e-6, rtol = 1e-6) # they aren't exactly equal
     
 
+def test_spheroid_diffusion():
+    '''
+    Test angular quantities from the diffusion of a spheroid.
+    '''
+    a = 2e-8 # 20 nm minor radius
+    ar = 5
+    spheroid = Spheroid(a, ar)
+    dt = 1e-5
+    n_steps = 5000
+    sim = FreeDiffusionSimulation(spheroid, dt, eta, kT, seed = 987654321,
+                                  pos0 = np.zeros(3), orient0 = np.identity(3))
+    traj = sim.run(n_steps)
+    clstr_msd_x, clstr_msd_y, clstr_msd_z = calc_msd(traj, max_steps = 5,
+                                                     particle_frame = True)
+    axis_x, axis_y, axis_z = calc_axis_autocorr(traj, max_steps = 5)
+
+    D = np.diag(spheroid.Ddim * kT / eta)
+    tbase = (np.arange(5) + 1) * dt
+    # There's going to be statistical fluctuation in the MSDs and
+    # axis autocorrelations.
+    # Roughly, expect at least n_steps / 5 independent measurements,
+    # so a fractional uncertainty of 1/sqrt(n_steps/5)
+    estimated_tol = 1/np.sqrt(n_steps/5) * 1.2 # fudge factor
+    
+    assert_allclose(clstr_msd_x, 2 * D[0] * tbase, rtol = estimated_tol)
+    assert_allclose(clstr_msd_y, 2 * D[1] * tbase, rtol = estimated_tol)
+    assert_allclose(clstr_msd_z, 2 * D[2] * tbase, rtol = estimated_tol)
+    assert_allclose(axis_x, exp(-(D[4] + D[5])*tbase), rtol = estimated_tol)
+    assert_allclose(axis_y, exp(-(D[3] + D[5])*tbase), rtol = estimated_tol)
+    assert_allclose(axis_z, exp(-(D[3] + D[4])*tbase), rtol = estimated_tol)
 
