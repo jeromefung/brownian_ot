@@ -12,9 +12,8 @@ Welcome to brownian_ot's documentation!
    :maxdepth: 2
 
    users/index
-
-   	     
-
+   credits
+   
 
 
 Indices and tables

@@ -119,3 +119,11 @@ paths_config.yaml
 # OS X cruft
 *.DS_Store
 
+# doc files from text editor
+*.rst~
+
+# LaTeX from drawing
+*.aux
+*.log
+*.synctex.gz
+*.pdf

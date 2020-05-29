@@ -9,24 +9,27 @@ class Simulation:
     '''
 
     def __init__(self, particle, timestep, f_ext,
-                 viscosity, kT, seed = None, pos0 = None, orient0 = None):
+                 viscosity, kT, pos0 = np.zeros(3), orient0 = np.identity(3),
+                 seed = None):
         self.particle = particle
         self.timestep = timestep
         self.f_ext = f_ext
         self.rng_seed = seed
         self.viscosity = viscosity
         self.kT = kT
-        # if initial position and orientation specified, set particle
-        if pos0 is not None:
-            particle._pos = pos0
-        if orient0 is not None:
-            # Be able to handle both a quaternion or a rotation matrix
-            if isinstance(orient0, quaternion.quaternion):
-                particle._orient = orient0
-            elif isinstance(orient0, np.ndarray) and orient0.shape == (3,3):
-                particle._orient = quaternion.from_rotation_matrix(orient0)
-            else:
-                raise TypeError('orient0 must be a quaternion or a 3 x 3 ndarray representing a rotation matrix')
+        # set particle initial position
+        particle._pos = pos0
+        # Be able to handle any array-like object
+        particle._pos = np.asarray(pos0)
+        if particle._pos.shape != (3,):
+            raise ValueError('Initial position must be array-like with length 3')
+        # Be able to handle both a quaternion or a rotation matrix
+        if isinstance(orient0, quaternion.quaternion):
+            particle._orient = orient0
+        elif isinstance(orient0, np.ndarray) and orient0.shape == (3,3):
+            particle._orient = quaternion.from_rotation_matrix(orient0)
+        else:
+            raise TypeError('orient0 must be a quaternion or a 3 x 3 ndarray representing a rotation matrix')
         self.rng = np.random.RandomState(seed)
 
 
@@ -34,10 +37,10 @@ class Simulation:
         '''
         Calculate random generalized displacement obeying generalized
         Stokes-Einstein relation. Recall
-        <q_i q_j> = 2D_{ij} \Delta t.
+        <q_i q_j> = 2D_{ij} Delta t.
         
         Return array of random displacements, prior to rescaling.
-        Need to scale by \sqrt(2 dt)
+        Need to scale by sqrt(2 dt)
         '''
         # calculate diffusion tensor in physical units
         D = self.particle.Ddim * self.kT / self.viscosity
@@ -94,6 +97,25 @@ class Simulation:
        
     
     def run(self, n_steps, outfname = None):
+        '''
+        Run the simulation.
+
+        Parameters
+        ----------
+        n_steps: integer
+            Number of time steps to run. 
+        outfname : string, optional
+            Name of file to optionally save trajectory to. A .npy extension
+            is automatically appended if not present.
+
+        Returns
+        -------
+        traj: ndarray (`n_steps + 1`, 7)
+            Particle trajectory. This is an array with `n_steps + 1` rows
+            since the initial position and orientation are specified in the
+            first row. Each row contains the particle's x, y, and z
+            coordinates followed by its orientation specified by a quaternion. 
+        '''
         # Preallocate
         file_len = n_steps + 1
         output = np.zeros((file_len, 7)) # com coords, quaternion
@@ -116,46 +138,89 @@ class Simulation:
 
 class FreeDiffusionSimulation(Simulation):
     '''
+    Simulates the Brownian motion of a particle with no external forces.
     '''
     def __init__(self, particle, timestep,
-                 viscosity, kT, seed = None, pos0 = None, orient0 = None):
+                 viscosity, kT, pos0 = np.zeros(3), orient0 = np.identity(3),
+                 seed = None):
+        '''
+        Parameters
+        ----------
+        particle : Particle object
+            Particle to be simulated.
+        timestep : float
+            Time step for simulation.
+        viscosity : float
+            Solvent viscosity.
+        kT : float
+            Thermal energy scale.
+        pos0 : array-like (3), optional
+            Initial position of particle. Defaults to the origin (0,0,0).
+        orient0 : array-like (3x3) or quaternion, optional
+            Initial orientation of particle. Defaults to particle reference 
+            orientation (identity rotation matrix).
+        seed : integer, optional
+            Seed for NumPy random number generator.
+        '''
 
         def zero_force(pos, orient):
             return np.zeros(6)
 
         super().__init__(particle, timestep, zero_force,
-                         viscosity, kT, seed, pos0, orient0)
+                         viscosity, kT, pos0, orient0, seed)
 
         
 class OTSimulation(Simulation):
+    '''
+    Simulates a particle experiencing forces due to optical tweezers.
+    '''
     def __init__(self, particle, beam, timestep,
-                 viscosity, kT, seed = None, pos0 = None, orient0 = None):
+                 viscosity, kT, pos0 = np.zeros(3), orient0 = np.identity(3),
+                 seed = None):
         super().__init__(particle, timestep, make_ott_force(particle, beam),
-                         viscosity, kT, seed, pos0, orient0)
+                         viscosity, kT, pos0, orient0, seed)
 
 
 class ConstantForceSimulation(Simulation):
     '''
-    Performs simulations in which a particle experiences a constant
-    external generalized force.
+    Simulates a particle experiencing a constant external generalized force.
+
     '''
+
     def __init__(self, particle, timestep, force,
-                 viscosity, kT, seed = None, pos0 = None, orient0 = None):
+                 viscosity, kT, pos0 = np.zeros(3), orient0 = np.identity(3),
+                 seed = None):
         '''
         Parameters
         ----------
+        particle : Particle object
+            Particle to be simulated.
+        timestep : float
+            Time step for simulation.
         force: ndarray (6)
             Generalized force vector (force + torque)
+        viscosity : float
+            Solvent viscosity.
+        kT : float
+            Thermal energy scale.
+        pos0 : array-like (3), optional
+            Initial position of particle. Defaults to the origin (0,0,0).
+        orient0 : array-like (3x3) or quaternion, optional
+            Initial orientation of particle. Defaults to particle reference 
+            orientation (identity rotation matrix).
+        seed : integer, optional
+            Seed for NumPy random number generator.
+ 
         '''
         def const_force(pos, orient):
             '''
-            Dummy input variables, but update method expects a callable
+            Dummy input variables, but Simulation._update() expects a callable
             function.
             '''
             return force
 
         super().__init__(particle, timestep, const_force,
-                        viscosity, kT, seed, pos0, orient0)
+                         viscosity, kT, pos0, orient0, seed)
         
 
 
