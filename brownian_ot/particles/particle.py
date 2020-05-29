@@ -8,7 +8,7 @@ class Particle:
     '''
     Base class that stores information about particle being simulated.
 
-    Diffusion tensor is scaled such that kT / \eta is factored out.
+    Diffusion tensor is scaled such that :math:`kT / \\eta` is factored out.
     This way, what's stored only depends on the particle geometry.
     '''
 
@@ -17,7 +17,8 @@ class Particle:
         Parameters
         ----------
         Ddim : ndarray, float (6 x 6)
-            Diffusion tensor in units of 1/length, with kT/\eta factored out
+            Diffusion tensor in units of 1/length, with :math:`kT/\\eta` 
+            factored out
         cod : ndarray, float (3)
             Particle center of diffusion
         n_p : complex
