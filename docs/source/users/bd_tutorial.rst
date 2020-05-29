@@ -1,7 +1,7 @@
 .. _bd_tutorial:
 
-Simulating Brownian Dynamics
-============================
+Simulating Brownian Dynamics: simple cases
+==========================================
 
 Overview
 --------

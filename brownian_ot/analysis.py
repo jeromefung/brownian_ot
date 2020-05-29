@@ -28,7 +28,7 @@ def expand_trajectory(traj):
     return output
 
 
-def _calc_cluster_displacements(trajectory, nsteps, cluster_frame = True,
+def _calc_cluster_displacements(trajectory, nsteps, particle_frame = True,
                                 full_output = False):
     '''
     Calculate cluster-frame squared displacements (for evaluating
@@ -49,7 +49,7 @@ def _calc_cluster_displacements(trajectory, nsteps, cluster_frame = True,
     u2_lab = trajectory[:max_rows, 6:9]
     u3_lab = trajectory[:max_rows, 9:12]
 
-    if cluster_frame:
+    if particle_frame:
         # dot products
         deltax_1 = (lab_disps * u1_lab).sum(axis = 1)
         deltax_2 = (lab_disps * u2_lab).sum(axis = 1)
@@ -92,7 +92,38 @@ def _calc_axis_dot_prods(trajectory, nsteps, full_output = False):
                          np.mean(u3dotu3)])
     
         
-def calc_msd(trajectory, max_steps = None, cluster_frame = True):
+def calc_msd(trajectory, max_steps = None, particle_frame = True):
+    '''
+    Calculate mean-squared displacement from a simulated trajectory.
+
+    Parameters
+    ----------
+    trajectory: ndarray (n x 7) or (n x 13)
+        Particle trajectory. Simulations return arrays with 7 columns
+        (3 coordinates and the 4 elements of the orientation quaternion),
+        but specifying all 9 elements of the rotation matrix is also 
+        permitted.
+    max_steps : integer, optional
+        Maximum number of steps to calculate MSD for.
+    particle_frame : boolean, optional
+        If True (default), calculates MSDs along particle reference axes. 
+        Otherwise, calculates MSDs in simulation frame.
+
+    Returns
+    -------
+    msd_x, msd_y, msd_z : ndarray(max_steps)
+        Mean-squared displacements.
+
+    Notes
+    -----
+    Trajectories can be converted from quaternion form to rotation matrix
+    form via `expand_trajectory()`.
+
+    `calc_msd` is agnostic about the simulation time step. To obtain
+    the actual times at which the MSD is calculated, if `dt` is the timestep,
+    use :code:`(np.arange(max_step) + 1) * dt`.
+
+    '''
     # set a sensible default, half the trajectory length if not given
     if max_steps is None:
         max_steps = np.floor(trajectory.shape[0] / 2).astype('int')
@@ -104,13 +135,45 @@ def calc_msd(trajectory, max_steps = None, cluster_frame = True):
 
     for i in np.arange(1, max_steps + 1):
         output[:, i - 1] = _calc_cluster_displacements(trajectory, i,
-                                                       cluster_frame =
-                                                       cluster_frame)
+                                                       particle_frame =
+                                                       particle_frame)
 
     return output[0], output[1], output[2]
 
 
 def calc_axis_autocorr(trajectory, max_steps = None):
+    '''
+    Calculate axis autocorrelation functions from a simulated trajectory.
+
+    Parameters
+    ----------
+    trajectory: ndarray (n x 7) or (n x 13)
+        Particle trajectory. Simulations return arrays with 7 columns
+        (3 coordinates and the 4 elements of the orientation quaternion),
+        but specifying all 9 elements of the rotation matrix is also 
+        permitted.
+    max_steps : integer, optional
+        Maximum number of steps to calculate axis autocorrelations for.
+
+    Returns
+    -------
+    axis_x, axis_y, axis_z : ndarray(max_steps)
+
+
+    Notes
+    -----
+    The axis autocorrelation for the :math:`x` axis at delay time :math:`\\tau` 
+    is defined as
+
+    .. math:: \\langle \\hat{x}(t+\\tau) \\cdot \\hat{x}(t) \\rangle 
+
+    Trajectories can be converted from quaternion form to rotation matrix
+    form via `expand_trajectory()`.
+
+    `calc_axis_autocorr` is agnostic about the simulation time step. To obtain
+    the actual times at which the autocorrelations are calculated, if 
+    `dt` is the timestep, use :code:`(np.arange(max_step) + 1) * dt`.
+    '''
     # set a sensible default, half the trajectory length if not given
     if max_steps is None:
         max_steps = floor(trajectory.shape[0] / 2).astype('int')

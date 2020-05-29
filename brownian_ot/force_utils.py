@@ -3,6 +3,8 @@ from .utils import rot_x, rot_y
 import scipy
 from scipy.optimize import brentq
 
+# TODO: too much code duplication in this module
+
 def calc_fz(zs, force_function):
     '''
     Return z component of optical force for particle at x = 0, y = 0
@@ -102,6 +104,11 @@ def find_zeq(force_function, guess = 0, window_size = 0.5e-6):
         Center of bracketing interval.
     window_size : float, optional
         Half-width of bracketing interval. 
+
+    Returns
+    -------
+    z_eq : float
+        Equilibrium z position.
     '''
     return brentq(calc_fz, guess - window_size, guess + window_size,
                   args = (force_function))

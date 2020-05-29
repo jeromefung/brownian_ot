@@ -176,8 +176,35 @@ class OTSimulation(Simulation):
     '''
     def __init__(self, particle, beam, timestep,
                  viscosity, kT, pos0 = np.zeros(3), orient0 = np.identity(3),
-                 seed = None):
-        super().__init__(particle, timestep, make_ott_force(particle, beam),
+                 seed = None, c = 3e8):
+        '''
+        Parameters
+        ----------
+        particle : Particle object
+            Particle to be simulated.
+        beam : Beam object
+            Describes incident beam.
+        timestep : float
+            Time step for simulation.
+        viscosity : float
+            Solvent viscosity.
+        kT : float
+            Thermal energy scale.
+        pos0 : array-like (3), optional
+            Initial position of particle. Defaults to the origin (0,0,0).
+        orient0 : array-like (3x3) or quaternion, optional
+            Initial orientation of particle. Defaults to particle reference 
+            orientation (identity rotation matrix).
+        seed : integer, optional
+            Seed for NumPy random number generator.
+        c : float, optional
+            The speed of light. Default value is in SI units; change to use
+            any other self-consistent unit system.
+        '''
+        # Check that particle has a refractive index specified
+        if particle.n_p is None:
+            raise TypeError('Particle refractive index needs to be specified.')
+        super().__init__(particle, timestep, make_ott_force(particle, beam, c),
                          viscosity, kT, pos0, orient0, seed)
 
 

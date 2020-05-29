@@ -2,7 +2,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 
 import brownian_ot
-from brownian_ot.beam import Beam
+from brownian_ot import Beam
 from brownian_ot.particles import Sphere, Spheroid, Dimer, SphereCluster
 from brownian_ot.simulation import OTSimulation
 from brownian_ot.ott_wrapper import make_ott_force

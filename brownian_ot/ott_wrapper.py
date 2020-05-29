@@ -32,9 +32,23 @@ eng.addpath(config['matlab_wrapper_path'])
 
 def make_ott_force(particle, beam, c = 3e8):
     '''
-    Factory to return a function to calculate the optical force
+    Factory function that returns a function to calculate the optical force
     on a particle.
 
+    Parameters
+    ----------
+    particle : `Particle` object
+        The particle experiencing the force.
+    beam : `Beam` object
+        The incident beam.
+    c : float, optional
+        The speed of light. The default value assumes SI units. Change
+        this if you want to use any other self-consistent unit system.
+
+    Returns
+    -------
+    force_func : function
+        Function that calculates optical forces and torques.
     '''
 
     beam_nmax = eng.ott_beam(beam.wavelen, beam.pol[0], beam.pol[1], beam.NA,
@@ -73,6 +87,21 @@ def make_ott_force(particle, beam, c = 3e8):
     omega = 2*pi*c/beam.wavelen # angular frequency
     
     def force(pos, rot_matrix):
+        '''
+        Calculates generalized optical force on a particle.
+
+        Parameters
+        ----------
+        pos : list or ndarray (3)
+            Coordinates of particle center of mass.
+        rot_matrix : list or ndarray (3,3)
+            Rotation matrix describing particle orientation.
+
+        Returns
+        -------
+        force : ndarray (6)
+            Generalized force (force + torque).
+        '''
         if isinstance(pos, np.ndarray):
             pos = pos.tolist()
 

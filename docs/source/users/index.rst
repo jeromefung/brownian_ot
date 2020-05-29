@@ -9,4 +9,6 @@ User Guide
 
     setup
     bd_tutorial
+    ot_tutorial
+    analysis_tutorial
     
