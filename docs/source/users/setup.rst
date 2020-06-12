@@ -13,6 +13,7 @@ Installing other requirements
 -----------------------------
 Here are other things you will need to install to access the full functionality of brownian_ot:
 
+ #. brownian_ot uses `quaternions <https://en.wikipedia.org/wiki/Quaternion>`_ to handle arbitrary rotations in 3D. There is a package, `quaternion`, that extends NumPy to handle quaternions. It lives on GitHub `here <https://github.com/moble/quaternion>`_. See its README for installation instructions, or `its page on conda-forge <https://anaconda.org/conda-forge/quaternion>`_.
  #. You will need a working current installation of Matlab.
  #. You will also need to install the `Matlab Engine API for Python <https://www.mathworks.com/help/matlab/matlab_external/install-the-matlab-engine-for-python.html>`_.
  #. Download (preferably, via `git clone`) `ott <https://github.com/ilent2/ott>`_ in order to calculate optical forces.  
