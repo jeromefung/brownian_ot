@@ -8,6 +8,7 @@ from brownian_ot.simulation import OTSimulation
 from brownian_ot.ott_wrapper import make_ott_force
 from brownian_ot.utils import sphere_D
 from brownian_ot.force_utils import calc_fz
+from brownian_ot.analysis import quaternion_orientation_average
 
 
 spheroid = Spheroid(a = 0.2e-6, ar = 1.5, n_p = 1.5)
@@ -32,7 +33,11 @@ def test_dimer():
                        seed = 12345678,
                        pos0 = np.array([0, 0, -1e-7]),
                        orient0 = np.identity(3))
-    sim.run(100)
+    traj = sim.run(100)
+    # First few steps should be near original
+    avg_initial_orient = quaternion_orientation_average(traj[:20, 3:])
+    assert_allclose(avg_initial_orient, np.array([1, 0, 0, 0]), rtol = 0.02,
+                    atol = 0.02)
 
     
 def test_dimer_force_calc():

@@ -198,4 +198,32 @@ need INVERSE to map LAB onto PARTICLE
 
 '''
 
+
+def quaternion_orientation_average(input):
+    '''
+    Perform orientation average given an input ndarray of quaternions.
+
+    Parameters
+    ----------
+    input : ndarray, float (n x 4)
+        Each row corresponds to one quaternion to be averaged.
+
+    Returns
+    -------
+    avg_orient : ndarray (4)
+        ndarray (not quaternion object!) corresponding to orientation average.
+
+    Notes
+    -----
+    Implements algorithm in Markley et al. (2007):
+    https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20070017872.pdf
+
+    This produces a quaternion minimizing the so-called L2 chordal norm.
+    '''
+    A = np.array([np.matmul(row.reshape((4,1)), row.reshape(1,4))
+                  for row in input]).sum(axis=0)
+    eigvals, eigvecs = np.linalg.eig(A)
+    # choose eigenvector w/largest eigenvalue
+    sstar = eigvecs[:, np.argmax(eigvals)]
+    return sstar/np.linalg.norm(sstar)
     

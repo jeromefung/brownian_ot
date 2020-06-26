@@ -5,6 +5,7 @@ from brownian_ot.simulation import FreeDiffusionSimulation, unbiased_rotation
 from numpy.testing import assert_allclose
 from brownian_ot.analysis import calc_msd, calc_axis_autocorr
 
+
 eta = 1e-3 # Pa s, water
 kT = 1.38e-23*295
 
