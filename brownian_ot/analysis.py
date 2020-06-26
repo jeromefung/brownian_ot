@@ -92,7 +92,8 @@ def _calc_axis_dot_prods(trajectory, nsteps, full_output = False):
                          np.mean(u3dotu3)])
     
         
-def calc_msd(trajectory, max_steps = None, particle_frame = True):
+def calc_msd(trajectory, max_steps = None, steps = None,
+             particle_frame = True):
     '''
     Calculate mean-squared displacement from a simulated trajectory.
 
@@ -104,7 +105,10 @@ def calc_msd(trajectory, max_steps = None, particle_frame = True):
         but specifying all 9 elements of the rotation matrix is also 
         permitted.
     max_steps : integer, optional
-        Maximum number of steps to calculate MSD for.
+        Maximum number of steps to calculate MSD for. If specified,
+        calculate MSD at integer steps up to max_step.
+    steps : ndarray, optional
+        Calculate MSD at these steps.
     particle_frame : boolean, optional
         If True (default), calculates MSDs along particle reference axes. 
         Otherwise, calculates MSDs in simulation frame.
@@ -124,16 +128,18 @@ def calc_msd(trajectory, max_steps = None, particle_frame = True):
     use :code:`(np.arange(max_step) + 1) * dt`.
 
     '''
-    # set a sensible default, half the trajectory length if not given
-    if max_steps is None:
-        max_steps = np.floor(trajectory.shape[0] / 2).astype('int')
+    if steps is None:
+        if max_steps:
+            steps = np.arange(1, max_steps + 1)
+        else:
+            raise RuntimeError('Specify either max_steps or steps.')
 
     if trajectory.shape[1] == 7: # orientation still in quaternion form
         trajectory = expand_trajectory(trajectory)
  
-    output = np.zeros((3, max_steps))
+    output = np.zeros((3, len(steps)))
 
-    for i in np.arange(1, max_steps + 1):
+    for i in steps:
         output[:, i - 1] = _calc_cluster_displacements(trajectory, i,
                                                        particle_frame =
                                                        particle_frame)
@@ -141,7 +147,7 @@ def calc_msd(trajectory, max_steps = None, particle_frame = True):
     return output[0], output[1], output[2]
 
 
-def calc_axis_autocorr(trajectory, max_steps = None):
+def calc_axis_autocorr(trajectory, max_steps = None, steps = None):
     '''
     Calculate axis autocorrelation functions from a simulated trajectory.
 
@@ -174,16 +180,18 @@ def calc_axis_autocorr(trajectory, max_steps = None):
     the actual times at which the autocorrelations are calculated, if 
     `dt` is the timestep, use :code:`(np.arange(max_step) + 1) * dt`.
     '''
-    # set a sensible default, half the trajectory length if not given
-    if max_steps is None:
-        max_steps = floor(trajectory.shape[0] / 2).astype('int')
+    if steps is None:
+        if max_steps:
+            steps = np.arange(1, max_steps + 1)
+        else:
+            raise RuntimeError('Specify either max_steps or steps.')
 
     if trajectory.shape[1] == 7: # orientation still in quaternion form
         trajectory = expand_trajectory(trajectory)
     
-    output = np.zeros((3, max_steps))
+    output = np.zeros((3, len(steps)))
 
-    for i in np.arange(1, max_steps + 1):
+    for i in steps:
         output[:, i - 1] = _calc_axis_dot_prods(trajectory, i)
 
     return output[0], output[1], output[2]
@@ -198,4 +206,32 @@ need INVERSE to map LAB onto PARTICLE
 
 '''
 
+
+def quaternion_orientation_average(input):
+    '''
+    Perform orientation average given an input ndarray of quaternions.
+
+    Parameters
+    ----------
+    input : ndarray, float (n x 4)
+        Each row corresponds to one quaternion to be averaged.
+
+    Returns
+    -------
+    avg_orient : ndarray (4)
+        ndarray (not quaternion object!) corresponding to orientation average.
+
+    Notes
+    -----
+    Implements algorithm in Markley et al. (2007):
+    https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20070017872.pdf
+
+    This produces a quaternion minimizing the so-called L2 chordal norm.
+    '''
+    A = np.array([np.matmul(row.reshape((4,1)), row.reshape(1,4))
+                  for row in input]).sum(axis=0)
+    eigvals, eigvecs = np.linalg.eig(A)
+    # choose eigenvector w/largest eigenvalue
+    sstar = eigvecs[:, np.argmax(eigvals)]
+    return sstar/np.linalg.norm(sstar)
     
