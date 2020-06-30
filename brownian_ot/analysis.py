@@ -139,10 +139,10 @@ def calc_msd(trajectory, max_steps = None, steps = None,
  
     output = np.zeros((3, len(steps)))
 
-    for i in steps:
-        output[:, i - 1] = _calc_cluster_displacements(trajectory, i,
-                                                       particle_frame =
-                                                       particle_frame)
+    for i in np.arange(len(steps)):
+        output[:, i] = _calc_cluster_displacements(trajectory, steps[i],
+                                                   particle_frame =
+                                                   particle_frame)
 
     return output[0], output[1], output[2]
 
@@ -191,8 +191,8 @@ def calc_axis_autocorr(trajectory, max_steps = None, steps = None):
     
     output = np.zeros((3, len(steps)))
 
-    for i in steps:
-        output[:, i - 1] = _calc_axis_dot_prods(trajectory, i)
+    for i in np.arange(len(steps)):
+        output[:, i] = _calc_axis_dot_prods(trajectory, steps[i])
 
     return output[0], output[1], output[2]
 
