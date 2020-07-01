@@ -58,6 +58,8 @@ def calc_tx(thetas, force_function, z = 0):
     '''
     Return x component of optical torque for a particle at x = 0, y = 0,
     z = z rotated by by different angles about the x axis.
+
+    thetas should be in radians.
     '''
     # A loop is needed because of the matlab interface
     if isinstance(thetas, (list, np.ndarray)):
@@ -73,6 +75,8 @@ def calc_ty(thetas, force_function, z = 0):
     '''
     Return y component of optical torque for a particle at x = 0, y = 0,
     z = z rotated by by different angles about the y axis.
+
+    thetas should be in radians.
     '''
     # A loop is needed because of the matlab interface
     if isinstance(thetas, (list, np.ndarray)):
