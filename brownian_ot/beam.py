@@ -28,6 +28,11 @@ class Beam:
         '''
         self.wavelen = wavelen
         self.pol = list(pol) # matlab doesn't play nicely with ndarrays
+        for idx, elt in enumerate(self.pol):
+            if elt.__class__ == np.complex128:
+                self.pol[idx] = complex(elt)
+                # matlab doesn't like np complex type
+                # This is a problem if using functions like np.exp()
         self.NA = NA
         self.n_med = n_med
         self.power = power
