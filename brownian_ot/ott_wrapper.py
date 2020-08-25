@@ -1,20 +1,12 @@
 import numpy as np
 from numpy import pi
 import warnings
-import matlab.engine
 import yaml
 import os
 import tempfile
 import shutil
 import subprocess
 from brownian_ot.particles import Sphere, Spheroid, SphereCluster
-
-# TODO: some sort of graceful exception handling if importing matlab fails
-# Code should still be usable for other functionality if matlab engine not
-# present.
-
-# Start Matlab engine
-eng = matlab.engine.start_matlab()
 
 # Load config file, add path to ott, wrappers to matlab engine
 dir = os.path.dirname(__file__)
@@ -23,9 +15,20 @@ with open(config_fname, mode = 'r') as file:
     config = yaml.load(file, Loader = yaml.SafeLoader)
     # plain load deprecated for security reasons
     # see https://github.com/yaml/pyyaml/wiki/PyYAML-yaml.load(input)-Deprecation
-eng.addpath(config['ott_path'])
-eng.addpath(config['matlab_wrapper_path'])
 
+# Allow module to be imported even if importing Matlab engine fails.
+# Exception with meaningful error message raised by make_ott_force
+try:
+    import matlab.engine
+    # Start Matlab engine
+    eng = matlab.engine.start_matlab()
+    eng.addpath(config['ott_path'])
+    eng.addpath(config['matlab_wrapper_path'])
+    _MATLAB_ENGINE = True
+except ImportError:
+    _MATLAB_ENGINE = False
+
+    
 # Unit conversion from efficiencies to real forces:
 # force: multiply efficiency by P * n_med / c
 # torque: multiply by P / omega
@@ -51,6 +54,9 @@ def make_ott_force(particle, beam, c = 3e8):
         Function that calculates optical forces and torques.
     '''
 
+    if not _MATLAB_ENGINE:
+        raise RuntimeError("MATLAB engine could not be started. Check that MATLAB and the MATLAB Engine API for Python are properly installed.")
+    
     beam_nmax = eng.ott_beam(beam.wavelen, beam.pol[0], beam.pol[1], beam.NA,
                              beam.n_med)
 
@@ -71,7 +77,6 @@ def make_ott_force(particle, beam, c = 3e8):
         # run mstm
         subprocess.run([config['mstm_executable_path'], 'cluster.inp'],
                        cwd = temp_dir)
-        # could pipe stdout to a file? 
         # call eng.ott_tmatrix_from_mstm to read cluster_tmatrix.dat
         tmatrix_path = os.path.join(temp_dir, 'cluster_tmatrix.dat')
         particle_nmax = eng.ott_tmatrix_from_mstm(tmatrix_path)
