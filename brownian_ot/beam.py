@@ -4,8 +4,8 @@ from collections import namedtuple
 
 class Beam:
     '''
-    Stores information about incident trapping beam in optical tweezers 
-    calculations.
+    Stores information about incident trapping beam (assumed to be Gaussian)
+    in optical tweezers calculations.
     
     This class interfaces with the ott beam object.
     '''
@@ -40,4 +40,22 @@ class Beam:
         # So polarization vector doesn't need to be normalized.
         
 
+class LGBeam(Beam):
+    '''
+    Class to store information about an arbitrary Laguerre-Gaussian beam.
+    '''
+    def __init__(self, mode, wavelen, pol, NA, n_med, power):
+        '''
+        Parameters
+        ----------
 
+        mode : list (2)
+            Mode indices [p, l]. The radial index p is the number of 
+            radial nodes. The azimuthal index l indicates how many times
+            the optical phase advances by 2 pi radians.
+
+        '''
+        self.type = 'LG' # future-proof if we add Hermite-Gaussian in the future
+        self.mode = mode
+        super().__init__(wavelen, pol, NA, n_med, power)
+        

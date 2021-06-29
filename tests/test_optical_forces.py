@@ -1,8 +1,8 @@
 import numpy as np
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_array_equal, assert_raises
 
 import brownian_ot
-from brownian_ot import Beam
+from brownian_ot import Beam, LGBeam
 from brownian_ot.particles import Sphere, Spheroid, Dimer, SphereCluster
 from brownian_ot.simulation import OTSimulation
 from brownian_ot.ott_wrapper import make_ott_force
@@ -18,6 +18,8 @@ small_dimer = Dimer(0.015e-6, 1.4)
 
 beam = Beam(wavelen = 1064e-9, pol = [1, 1j], NA = 1.2,
             n_med = 1.33, power = 5e-3)
+donut_beam = LGBeam(mode = [0, 2], wavelen = 1064e-9, pol = [1, 1j], NA = 1.2,
+                    n_med = 1.33, power = 8e-3)
 
 def test_spheroid_ot():
     sim = OTSimulation(spheroid, beam, timestep = 1e-5,
@@ -75,4 +77,17 @@ def test_sphere_ott_mstm():
     # Setting atol is necessary because of roundoff of floats that are nearly 0
 
 
+def test_beams():
+    '''
+    Calculate optical force with Gaussian (0,0) beam and Laguerre-Gaussian
+    donut beam. They should not agree.
+    '''
+    gaussian_force_func = make_ott_force(sphere, beam)
+    gaussian_force = gaussian_force_func(np.zeros(3), np.identity(3))
+
+    donut_force_func = make_ott_force(sphere, donut_beam)
+    donut_force = donut_force_func(np.zeros(3), np.identity(3))
+
+    assert_raises(AssertionError, assert_array_equal,
+                  gaussian_force, donut_force)
     

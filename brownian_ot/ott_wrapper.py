@@ -51,8 +51,14 @@ def make_ott_force(particle, beam, c = 3e8):
         Function that calculates optical forces and torques.
     '''
 
-    beam_nmax = eng.ott_beam(beam.wavelen, beam.pol[0], beam.pol[1], beam.NA,
-                             beam.n_med)
+    # use hasattr here to switch between old vs new syntax
+    if hasattr(beam, 'mode'):
+        mode = matlab.double(beam.mode)
+    else: # assume [0, 0] default
+        mode = matlab.double([0,0]) # needed b/c of arithmetic in ott
+        
+    beam_nmax = eng.ott_beam(beam.wavelen, beam.pol[0], beam.pol[1],
+                             beam.NA, beam.n_med, mode)
 
     if isinstance(particle, Sphere):
         eng.ott_tmatrix_sphere(particle.n_p, particle.a,
