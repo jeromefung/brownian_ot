@@ -28,7 +28,7 @@ try:
 except ImportError:
     _MATLAB_ENGINE = False
 
-    
+
 # Unit conversion from efficiencies to real forces:
 # force: multiply efficiency by P * n_med / c
 # torque: multiply by P / omega
@@ -56,13 +56,13 @@ def make_ott_force(particle, beam, c = 3e8):
 
     if not _MATLAB_ENGINE:
         raise RuntimeError("MATLAB engine could not be started. Check that MATLAB and the MATLAB Engine API for Python are properly installed.")
-    
+
     # use hasattr here to switch between old vs new syntax
     if hasattr(beam, 'mode'):
         mode = matlab.double(beam.mode)
     else: # assume [0, 0] default
         mode = matlab.double([0,0]) # needed b/c of arithmetic in ott
-        
+
     beam_nmax = eng.ott_beam(beam.wavelen, beam.pol[0], beam.pol[1],
                              beam.NA, beam.n_med, mode)
 
@@ -90,13 +90,13 @@ def make_ott_force(particle, beam, c = 3e8):
         if beam_nmax < particle_nmax:
             warnings.warn('ott beam n_max < mstm cluster n_max',
                           RuntimeWarning)
-        
+
         # temp_dir should get garbage-collected
     else:
         raise NotImplementedError('Other scatterers not yet implemented.')
 
     omega = 2*pi*c/beam.wavelen # angular frequency
-    
+
     def force(pos, rot_matrix):
         '''
         Calculates generalized optical force on a particle.
@@ -129,8 +129,8 @@ def make_ott_force(particle, beam, c = 3e8):
         return np.array([fx, fy, fz, tx, ty, tz]) * \
             np.concatenate((beam.n_med * beam.power / c * np.ones(3),
                             beam.power / omega * np.ones(3)))
-        
-        
+
+
     return force
 
 
@@ -142,6 +142,7 @@ def _make_mstm_input(particle, beam, save_name):
     # So, input deck doesn't need to specify them all.
     # Also, order isn't critical. See loop in subroutine inputdata,
     # line 1907.
+
     deck_file = open(save_name, 'w', encoding='utf-8')
     deck_file.write('number_spheres\n')
     deck_file.write(str(particle.n_spheres) + '\n')
@@ -154,9 +155,15 @@ def _make_mstm_input(particle, beam, save_name):
     deck_file.write('length_scale_factor\n')
     deck_file.write('{:.15f}\n'.format(mstm_length_scale_factor))
     deck_file.write('real_ref_index_scale_factor\n')
-    deck_file.write('{:.15f}\n'.format(particle.n_p.real))
+    if np.isscalar(particle.n_p):
+        deck_file.write('{:.15f}\n'.format(particle.n_p.real))
+    else: # For arrays, make this 1 and use 6-entries per particle
+        deck_file.write('1.0\n')
     deck_file.write('imag_ref_index_scale_factor\n')
-    deck_file.write('{:.15f}\n'.format(particle.n_p.imag))
+    if np.isscalar(particle.n_p):
+        deck_file.write('{:.15f}\n'.format(particle.n_p.imag))
+    else:
+        deck_file.write('1.0\n')
     deck_file.write('medium_real_ref_index\n')
     deck_file.write('{:.15f}\n'.format(beam.n_med))
     deck_file.write('medium_imag_ref_index\n')
@@ -187,10 +194,21 @@ def _make_mstm_input(particle, beam, save_name):
     deck_file.write('1.d-7\n')
     deck_file.write('sphere_sizes_and_positions\n')
 
-    # Iterate over array of sphere positions
-    for pos in particle.sphere_pos:
-        deck_file.write('1.d0 {:.15f} {:.15f} {:.15f} \n'.format(*pos))
-
-    
+    # Iterate over particles to write radii and positions.
+    if hasattr(particle, 'a_ratios'):
+        particle_data = np.hstack((np.array([particle.a_ratios]).transpose(),
+                                   particle.sphere_pos))
+    else:
+        particle_data = np.hstack((np.ones(particle.n_spheres).reshape((particle.n_spheres,-1)),
+                                   particle.sphere_pos))
+    # Use 4-column format if all particles have the same index
+    if np.isscalar(particle.n_p):
+        for datum in particle_data:
+            deck_file.write('{:.15f} {:.15f} {:.15f} {:.15f} \n'.format(*datum))
+    else:
+        for datum, rindex in zip(particle_data, particle.n_p):
+            deck_file.write('{:.15f} {:.15f} {:.15f} {:.15f} {:.15f} {:.15f} \n'.format(*datum,
+                                                                                        rindex.real,
+                                                                                        rindex.imag))
     deck_file.close()
     return
