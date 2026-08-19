@@ -100,10 +100,10 @@ def calc_msd(trajectory, max_steps = None, steps = None,
     Parameters
     ----------
     trajectory: ndarray (n x 7) or (n x 13)
-        Particle trajectory. Simulations return arrays with 7 columns
-        (3 coordinates and the 4 elements of the orientation quaternion),
-        but specifying all 9 elements of the rotation matrix is also 
-        permitted.
+        Particle trajectory array. `Simulation.run()` returns an ASDF file
+        whose ``data`` key has 7 columns (3 coordinates and the 4 elements
+        of the orientation quaternion). Specifying all 9 elements of the
+        rotation matrix is also permitted.
     max_steps : integer, optional
         Maximum number of steps to calculate MSD for. If specified,
         calculate MSD at integer steps up to max_step.
@@ -154,10 +154,10 @@ def calc_axis_autocorr(trajectory, max_steps = None, steps = None):
     Parameters
     ----------
     trajectory: ndarray (n x 7) or (n x 13)
-        Particle trajectory. Simulations return arrays with 7 columns
-        (3 coordinates and the 4 elements of the orientation quaternion),
-        but specifying all 9 elements of the rotation matrix is also 
-        permitted.
+        Particle trajectory array. `Simulation.run()` returns an ASDF file
+        whose ``data`` key has 7 columns (3 coordinates and the 4 elements
+        of the orientation quaternion). Specifying all 9 elements of the
+        rotation matrix is also permitted.
     max_steps : integer, optional
         Maximum number of steps to calculate axis autocorrelations for.
 

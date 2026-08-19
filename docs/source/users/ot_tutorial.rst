@@ -75,7 +75,8 @@ The simulation can then be run as before:
 
 .. testcode::
 
-   traj = sim.run(500)
+   output = sim.run(500)
+   traj = np.asarray(output["data"])
 
 Note that optical tweezer simulations can take longer to run, particularly for
 large particles. This is because the optical force calculations can be

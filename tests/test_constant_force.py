@@ -21,7 +21,7 @@ def test_athermal():
                                   eta, 0, pos0 = np.zeros(3),
                                   orient0 = np.identity(3))
 
-    traj = sim.run(traj_len)
+    traj = np.asarray(sim.run(traj_len)["data"])
     traj = expand_trajectory(traj)
     expected_pos = np.array([0, 0, -v_term * traj_len * dt, 1, 0, 0,
                              0, 1, 0, 0, 0, 1])
