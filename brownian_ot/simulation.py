@@ -3,6 +3,7 @@ from numpy import sin, cos
 from brownian_ot.ott_wrapper import make_ott_force
 import quaternion
 import asdf
+from pathlib import Path
 
 
 class Simulation:
@@ -106,7 +107,8 @@ class Simulation:
         # see BROWNRIG paper eq. 19, use quaternion composition
         self.particle._orient = self.particle._orient * infntsml_quat
 
-    def run(self, n_steps, outfname=None):
+    def run(self, n_steps, outfname = None, downsample_interval = None,
+            donwsampled_fname = None):
         """
         Run the simulation.
 
@@ -115,50 +117,113 @@ class Simulation:
         n_steps: integer
             Number of time steps to run.
         outfname : string, optional
-            Name of file to optionally save the result to. A .asdf extension
-            is automatically appended if not present.
+            If not None, name of file to optionally save the result to. 
+            Trajectory and metadata are saved as an ASDF file.
+            A .asdf extension is automatically appended to the name if not present.
 
         Returns
         -------
-        output : asdf.AsdfFile
-            ASDF file containing metadata and the particle trajectory. The
-            trajectory array is at ``output["data"]`` and has shape
-            (`n_steps + 1`, 7). The first row is the initial position and
-            orientation. Each row contains the particle's x, y, and z
-            coordinates followed by its orientation specified by a quaternion.
+        traj: ndarray (`n_steps + 1`, 7)
+            Particle trajectory. This is an array with `n_steps + 1` rows
+            since the initial position and orientation are specified in the
+            first row. Each row contains the particle's x, y, and z
+            coordinates followed by its orientation specified by a quaternion. 
+
         """
+        # Validate
+        if downsample_interval is not None and outfname is None:
+            raise TypeError("The 'outfname' keyword argument is required if 'donwsample_interval' is provided.")
+            
+        if downsampled_fname is not None and downsample_interval is None:
+            raise TypeError("The 'downsample_interval keyword argument is required if 'downsampled_fname' is provided.")
+             
         # Preallocate
         file_len = n_steps + 1
-        data = np.zeros((file_len, 7))  # com coords, quaternion
-        data[0] = self.particle._nice_output()  # First row is initial position
-
+        output = np.zeros((file_len, 7)) # com coords, quaternion
+        output[0] = self.particle._nice_output() # First row is initial position
+        
         # main loop
         for ctr in np.arange(1, n_steps + 1):
             # step the particle
             self._update()
-            data[ctr] = self.particle._nice_output()
+            output[ctr] = self.particle._nice_output()
 
-        # asdf file output
-        particle_meta = {
-            "type": type(self.particle).__name__,
-            "Ddim": np.asarray(self.particle.Ddim),
-            "cod": np.asarray(self.particle.cod),
-            "n_p": None if self.particle.n_p is None else np.asarray(self.particle.n_p),
+        if outfname is not None:
+            metadata_tree = self._prepare_metadata(output)
+            asdf_object = AsdfFile(metadata_tree)
+            
+            output_path = Path(outfname)
+            if not output_path.suffix:
+                outfname[-5:] != ".asdf":
+                output_path = output_path.with_suffix(".asdf")
+                
+            asdf_object.write_to(output_path)
+            
+            if downsample_interval is not None:
+                downsampled_tree = self._prepare_downsampled_metadata(metadata_tree, 
+                                                                      downsample_interval)
+                downsampled_asdf_object = AsdfFile(downsampled_tree)
+                if downsampled_fname is None:
+                    orig_path = Path(outfname)
+                    downsampled_path = orig_path.with_name(orig_path.stem + '_downsampled'
+                                                           + orig_path.suffix)
+                else:
+                    downsampled_path = Path(downsampled_fname)
+                    if not p.suffix:
+                        downsampled_path = downsampled_path.with_suffix(".asdf")
+                downsampled_asdf_object.write_to(downsampled_path)
+                
+        return output
+    
+    
+    def _prepare_metadata(self, trajectory):
+        # Every simulation has:
+            # simulation parameters
+            # data
+            # a particle (which should write its own metadata)
+        simulation_dict = {
+            'timestep' : self.timestep,
+            'type' : self.__class__.__name__,
+            'seed' : sim.rng_seed,
+            'viscosity' : sim.viscosity,
+            'kT' : sim.kT,
+            'n_steps' : len(traj) - 1
         }
+        particle_dict = self.particle._prepare_metadata()
+        tree = {
+            'trajectory' : trajectory,
+            'particle' : particle_dict,
+            'simulation' : simulation_dict
+        }
+        return tree
+    
+    
+    def _prepare_downsampled_metadata(tree, interval):
+        pass
+            
+'''
+        
+        if outfname is not None:
+            # prepare asdf file output
+            particle_meta = {
+                "type": type(self.particle).__name__,
+                "Ddim": np.asarray(self.particle.Ddim),
+                "cod": np.asarray(self.particle.cod),
+                "n_p": None if self.particle.n_p is None else np.asarray(self.particle.n_p)}
 
-        if hasattr(self.particle, "a"):
-            particle_meta["a"] = self.particle.a
-        if hasattr(self.particle, "ar"):
-            particle_meta["ar"] = self.particle.ar
-        if hasattr(self.particle, "n_spheres"):
-            particle_meta["n_spheres"] = self.particle.n_spheres
-        if hasattr(self.particle, "sphere_pos"):
-            particle_meta["sphere_pos"] = np.asarray(self.particle.sphere_pos)
-        if hasattr(self.particle, "a_ratios"):
-            particle_meta["a_ratios"] = np.asarray(self.particle.a_ratios)
-        if hasattr(self.particle, "equivalent_sphere_radius"):
-            particle_meta["equivalent_sphere_radius"] = (
-                self.particle.equivalent_sphere_radius
+            if hasattr(self.particle, "a"):
+                particle_meta["a"] = self.particle.a
+            if hasattr(self.particle, "ar"):
+                particle_meta["ar"] = self.particle.ar
+            if hasattr(self.particle, "n_spheres"):
+                particle_meta["n_spheres"] = self.particle.n_spheres
+            if hasattr(self.particle, "sphere_pos"):
+                particle_meta["sphere_pos"] = np.asarray(self.particle.sphere_pos)
+            if hasattr(self.particle, "a_ratios"):
+                particle_meta["a_ratios"] = np.asarray(self.particle.a_ratios)
+            if hasattr(self.particle, "equivalent_sphere_radius"):
+                particle_meta["equivalent_sphere_radius"] = (
+                    self.particle.equivalent_sphere_radius
             )
         simulation_meta = {
             "class": type(self).__name__,
@@ -206,7 +271,7 @@ class Simulation:
             output.write_to(outfname)
 
         return output
-
+'''
 
 class FreeDiffusionSimulation(Simulation):
     """
@@ -307,6 +372,14 @@ class OTSimulation(Simulation):
         )
         self.beam = beam
         self.c = c
+        
+    def _prepare_metadata(self, trajectory):
+        tree = super()._prepare_metadata(trajectory)
+        # add beam
+        beam_dict = self.beam._prepare_metadata()
+        beam_dict['c'] = self.c
+        tree['beam'] = beam_dict
+        return(tree)
 
 
 class ConstantForceSimulation(Simulation):
@@ -360,6 +433,12 @@ class ConstantForceSimulation(Simulation):
             particle, timestep, const_force, viscosity, kT, pos0, orient0, seed
         )
         self.force = force
+        
+    def _prepare_metadata(self, trajectory):
+        tree = super()._prepare_metadata(trajectory)
+        # append force to simulation parameters
+        tree['simulation']['force'] = self.force
+        return tree
 
 
 def unbiased_rotation(a, b, c):
