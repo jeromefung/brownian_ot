@@ -122,6 +122,9 @@ class Simulation:
             A .asdf extension is automatically appended to the name if not present.
         downsample_interval : None or integer, optional
             If not None, save a reduced trajectory keeping every downsample_interval points.
+        downsampled_fname : string, optional
+            File name for downsampled ASDF file. Name automatically generated from outfname
+            if not provided.
 
         Returns
         -------
@@ -213,78 +216,6 @@ class Simulation:
         }
         return tree2
         
-            
-'''
-        
-        if outfname is not None:
-            # prepare asdf file output
-            particle_meta = {
-                "type": type(self.particle).__name__,
-                "Ddim": np.asarray(self.particle.Ddim),
-                "cod": np.asarray(self.particle.cod),
-                "n_p": None if self.particle.n_p is None else np.asarray(self.particle.n_p)}
-
-            if hasattr(self.particle, "a"):
-                particle_meta["a"] = self.particle.a
-            if hasattr(self.particle, "ar"):
-                particle_meta["ar"] = self.particle.ar
-            if hasattr(self.particle, "n_spheres"):
-                particle_meta["n_spheres"] = self.particle.n_spheres
-            if hasattr(self.particle, "sphere_pos"):
-                particle_meta["sphere_pos"] = np.asarray(self.particle.sphere_pos)
-            if hasattr(self.particle, "a_ratios"):
-                particle_meta["a_ratios"] = np.asarray(self.particle.a_ratios)
-            if hasattr(self.particle, "equivalent_sphere_radius"):
-                particle_meta["equivalent_sphere_radius"] = (
-                    self.particle.equivalent_sphere_radius
-            )
-        simulation_meta = {
-            "class": type(self).__name__,
-            "n_steps": n_steps,
-            "timestep": self.timestep,
-            "viscosity": self.viscosity,
-            "kT": self.kT,
-            "rng_seed": self.rng_seed,
-            "pos0": data[0, :3],
-            "orient0": data[0, 3:],
-        }
-        if hasattr(self, "c"):
-            simulation_meta["c"] = self.c
-        if hasattr(self, "force"):
-            simulation_meta["force"] = np.asarray(self.force)
-        asdf_data = {
-            "schema_version": "1.0",
-            "simulation": simulation_meta,
-            "particle": particle_meta,
-            "trajectory": {
-                "n_rows": data.shape[0],
-                "columns": ["x", "y", "z", "qw", "qx", "qy", "qz"],
-            },
-            "data": data,
-        }
-        if hasattr(self, "beam"):
-            beam = self.beam
-            beam_meta = {
-                "type": getattr(beam, "type", "Gaussian"),
-                "wavelen": beam.wavelen,
-                "pol": np.asarray(beam.pol, dtype=complex),
-                "NA": beam.NA,
-                "n_med": beam.n_med,
-                "power": beam.power,
-            }
-            if hasattr(beam, "mode"):
-                beam_meta["mode"] = np.asarray(beam.mode)
-            asdf_data["beam"] = beam_meta
-
-        output = asdf.AsdfFile(asdf_data)
-
-        if outfname is not None:
-            if outfname[-4:] != ".asdf":
-                outfname = outfname + ".asdf"
-            output.write_to(outfname)
-
-        return output
-'''
 
 class FreeDiffusionSimulation(Simulation):
     """

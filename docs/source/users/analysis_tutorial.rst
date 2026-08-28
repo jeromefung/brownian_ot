@@ -23,8 +23,7 @@ Next,
     dimer = Dimer(a = 0.4e-6)
     dt = 5e-5
     sim = FreeDiffusionSimulation(dimer, dt, 1e-3, 295*1.38e-23)
-    output = sim.run(5000)
-    traj = np.asarray(output["data"])
+    traj = sim.run(5000)
 
 To analyze the translational motion of a particle, we usually want to calculate
 mean-squared displacements in the particle frame. (This means that we decompose

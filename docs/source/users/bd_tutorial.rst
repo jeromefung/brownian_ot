@@ -84,11 +84,12 @@ The simulation can now be run:
 
 .. testcode::
 
-   output = sim.run(1000)
-   traj = np.asarray(output["data"])
+   traj = sim.run(1000)
 
-This runs the simulation for 1000 time steps. The output is an ASDF file.
-The trajectory array is stored under the ``data`` key:
+This runs the simulation for 1000 time steps. The output, `traj`, is an ndarray.
+Optionally, by providing the `outfname` keyword argument to `sim.run()`,
+the output can be saved as ASDF file.
+If saved as an ASDF file, the trajectory array is stored under the ``trajectory`` key:
 
 ..  testcode::
 
@@ -104,7 +105,7 @@ each row, the first 3 elements are the particle's position, and the last 4
 elements are the particle's orientation specified as a quaternion.
 
 Since `traj` is an ndarray, you can now manipulate it via any of NumPy's
-functions and methods. Simulation parameters and particle metadata are stored
+functions and methods. If saved, simulation parameters and particle metadata are stored
 alongside the trajectory in the ASDF file (for example,
 ``output["simulation"]`` and ``output["particle"]``). Most of the time,
 particularly when running long simulations, you will want to save the output.
