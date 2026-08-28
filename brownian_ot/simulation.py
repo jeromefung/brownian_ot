@@ -120,6 +120,8 @@ class Simulation:
             If not None, name of file to optionally save the result to. 
             Trajectory and metadata are saved as an ASDF file.
             A .asdf extension is automatically appended to the name if not present.
+        downsample_interval : None or integer, optional
+            If not None, save a reduced trajectory keeping every downsample_interval points.
 
         Returns
         -------
@@ -199,7 +201,18 @@ class Simulation:
     
     
     def _prepare_downsampled_metadata(tree, interval):
-        pass
+        trajectory = tree['trajectory']
+        simulation_dict = tree['simulation']
+        simulation_dict['downsampled_timestep'] = simulation_dict['timestep'] * interval
+        
+        tree2 = {
+            'trajectory' : trajectory[::interval, :].copy(),
+            'particle' : particle_dict,
+            'beam' : beam_dict,
+            'simulation' : simulation_dict
+        }
+        return tree2
+        
             
 '''
         

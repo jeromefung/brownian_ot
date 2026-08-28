@@ -44,6 +44,7 @@ class Particle:
             'type' : self.__class__.__name__,
             'diffusion_tensor' : self.Ddim,
             'center_of_diffusion' : self.cod
+            'refractive_index' : self.n_p
         }
         return particle_dict
 
@@ -72,7 +73,6 @@ class Sphere(Particle):
     def _prepare_metadata(self):
         particle_dict = super()._prepare_metadata()
         particle_dict['radius'] = self.a 
-        particle_dict['refractive_index'] = self.n_p
         return particle_dict
 
 
@@ -110,4 +110,10 @@ class Spheroid(Particle):
     @property
     def equivalent_sphere_radius(self):
         return (self.a**3 * self.ar)**(1/3)
+    
+    def _prepare_metadata(self):
+        particle_dict = super()._prepare_metadata()
+        particle_dict['perpendicular_radius'] = self.a 
+        particle_dict['aspect_ratio'] = self.ar
+        return particle_dict
         
