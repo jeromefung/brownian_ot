@@ -62,7 +62,7 @@ def test_spheroid_diffusion():
     n_steps = 5000
     sim = FreeDiffusionSimulation(spheroid, dt, eta, kT, seed = 987654321,
                                   pos0 = np.zeros(3), orient0 = np.identity(3))
-    traj = np.asarray(sim.run(n_steps)["data"])
+    traj = sim.run(n_steps)
     clstr_msd_x, clstr_msd_y, clstr_msd_z = calc_msd(traj, max_steps = 5,
                                                      particle_frame = True)
     axis_x, axis_y, axis_z = calc_axis_autocorr(traj, max_steps = 5)
