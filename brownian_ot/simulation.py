@@ -152,7 +152,7 @@ class Simulation:
 
         if outfname is not None:
             metadata_tree = self._prepare_metadata(output)
-            asdf_object = AsdfFile(metadata_tree)
+            asdf_object = asdf.AsdfFile(metadata_tree)
             
             output_path = Path(outfname)
             if not output_path.suffix:
@@ -163,7 +163,7 @@ class Simulation:
             if downsample_interval is not None:
                 downsampled_tree = self._prepare_downsampled_metadata(metadata_tree, 
                                                                       downsample_interval)
-                downsampled_asdf_object = AsdfFile(downsampled_tree)
+                downsampled_asdf_object = asdf.AsdfFile(downsampled_tree)
                 if downsampled_fname is None:
                     orig_path = Path(outfname)
                     downsampled_path = orig_path.with_name(orig_path.stem + '_downsampled'
@@ -185,16 +185,17 @@ class Simulation:
         simulation_dict = {
             'timestep' : self.timestep,
             'type' : self.__class__.__name__,
-            'seed' : sim.rng_seed,
-            'viscosity' : sim.viscosity,
-            'kT' : sim.kT,
-            'n_steps' : len(traj) - 1
+            'seed' : self.rng_seed,
+            'viscosity' : self.viscosity,
+            'kT' : self.kT,
+            'n_steps' : len(trajectory) - 1
         }
         particle_dict = self.particle._prepare_metadata()
         tree = {
             'trajectory' : trajectory,
             'particle' : particle_dict,
-            'simulation' : simulation_dict
+            'simulation' : simulation_dict,
+            'schema_version' : "1.0",
         }
         return tree
     

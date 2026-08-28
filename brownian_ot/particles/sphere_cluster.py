@@ -52,7 +52,8 @@ class SphereCluster(Particle):
     def _prepare_metadata(self):
         particle_dict = super()._prepare_metadata()
         particle_dict['radius'] = self.a 
-        particle_dict['aspect_ratios'] = self.a_ratios
+        if hasattr(self, 'a_ratios'):
+            particle_dict['aspect_ratios'] = self.a_ratios
         particle_dict['sphere_positions'] = self.sphere_pos
         return particle_dict
 
