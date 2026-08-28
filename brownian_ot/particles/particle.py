@@ -43,7 +43,7 @@ class Particle:
         particle_dict = {
             'type' : self.__class__.__name__,
             'diffusion_tensor' : self.Ddim,
-            'center_of_diffusion' : self.cod
+            'center_of_diffusion' : self.cod,
             'refractive_index' : self.n_p
         }
         return particle_dict

@@ -108,7 +108,7 @@ class Simulation:
         self.particle._orient = self.particle._orient * infntsml_quat
 
     def run(self, n_steps, outfname = None, downsample_interval = None,
-            donwsampled_fname = None):
+            downsampled_fname = None):
         """
         Run the simulation.
 
@@ -156,7 +156,6 @@ class Simulation:
             
             output_path = Path(outfname)
             if not output_path.suffix:
-                outfname[-5:] != ".asdf":
                 output_path = output_path.with_suffix(".asdf")
                 
             asdf_object.write_to(output_path)
