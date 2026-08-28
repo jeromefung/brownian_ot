@@ -3,5 +3,7 @@ scipy
 quaternion
 pyyaml
 matlab.engine
+asdf
+pytest
 
 

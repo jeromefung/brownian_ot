@@ -39,6 +39,14 @@ class Particle:
         return np.concatenate((self._pos,
                                quaternion.as_float_array(self._orient)))
 
+    def _prepare_metadata(self):
+        particle_dict = {
+            'type' : self.__class__.__name__,
+            'diffusion_tensor' : self.Ddim,
+            'center_of_diffusion' : self.cod,
+            'refractive_index' : self.n_p
+        }
+        return particle_dict
 
 class Sphere(Particle):
     '''
@@ -61,6 +69,11 @@ class Sphere(Particle):
         '''
         self.a = a
         super().__init__(sphere_D(a, 1, 1), np.zeros(3), n_p = n_p)
+        
+    def _prepare_metadata(self):
+        particle_dict = super()._prepare_metadata()
+        particle_dict['radius'] = self.a 
+        return particle_dict
 
 
 class Spheroid(Particle):
@@ -97,4 +110,10 @@ class Spheroid(Particle):
     @property
     def equivalent_sphere_radius(self):
         return (self.a**3 * self.ar)**(1/3)
+    
+    def _prepare_metadata(self):
+        particle_dict = super()._prepare_metadata()
+        particle_dict['perpendicular_radius'] = self.a 
+        particle_dict['aspect_ratio'] = self.ar
+        return particle_dict
         

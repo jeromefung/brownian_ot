@@ -1,16 +1,23 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose, assert_array_equal, assert_raises
+import shutil
 
 import brownian_ot
 from brownian_ot import Beam, LGBeam
 from brownian_ot.particles import Sphere, Spheroid, Dimer, SphereCluster
 from brownian_ot.simulation import OTSimulation
-from brownian_ot.ott_wrapper import make_ott_force
+from brownian_ot.ott_wrapper import make_ott_force, config, _MATLAB_ENGINE
 from brownian_ot.utils import sphere_D
 from brownian_ot.force_utils import calc_fz, find_zeq
 from brownian_ot.analysis import quaternion_orientation_average
 
+requires_matlab = pytest.mark.skipif(not _MATLAB_ENGINE, reason = "MATLAB engine not available")
+
+requires_mstm = pytest.mark.skipif(
+    not shutil.which(config["mstm_executable_path"]),
+    reason="MSTM executable not available",
+)
 
 spheroid = Spheroid(a = 0.2e-6, ar = 1.5, n_p = 1.5)
 sphere = Sphere(a = 0.6e-6, n_p = 1.45+0.01j)
@@ -22,6 +29,7 @@ beam = Beam(wavelen = 1064e-9, pol = [1, 1j], NA = 1.2,
 donut_beam = LGBeam(mode = [0, 2], wavelen = 1064e-9, pol = np.array([1, 1j]),
                     NA = 1.2, n_med = 1.33, power = 8e-3)
 
+@requires_matlab
 def test_spheroid_ot():
     sim = OTSimulation(spheroid, beam, timestep = 1e-5,
                        viscosity = 1e-3, kT = 295 * 1.38e-23,
@@ -30,6 +38,7 @@ def test_spheroid_ot():
                        orient0 = np.identity(3))
     sim.run(100)
 
+@requires_matlab
 def test_dimer():
     sim = OTSimulation(dimer, beam, timestep = 1e-5,
                        viscosity = 1e-3, kT = 295 * 1.38e-23,
@@ -42,7 +51,7 @@ def test_dimer():
     assert_allclose(avg_initial_orient, np.array([1, 0, 0, 0]), rtol = 0.02,
                     atol = 0.02)
 
-
+@requires_matlab
 def test_dimer_force_calc():
     '''
     Check force calculations for a Rayleigh-sized dimer.
@@ -64,6 +73,8 @@ def test_dimer_force_calc():
                   np.zeros(1), np.array([z_eq]))
 
 
+@requires_matlab
+@requires_mstm
 def test_sphere_ott_mstm():
     '''
     Compare optical force calculated using ott-generated sphere T-matrix
@@ -83,6 +94,7 @@ def test_sphere_ott_mstm():
     # Setting atol is necessary because of roundoff of floats that are nearly 0
 
 
+@requires_matlab
 def test_beams():
     '''
     Calculate optical force with Gaussian (0,0) beam and Laguerre-Gaussian
@@ -106,6 +118,7 @@ def test_mismatched_indices_ratios():
                                 1e-6, np.ones(3)*1.2,
                                 np.ones(2))
 
+@requires_matlab
 def test_chain_forces():
     '''
     Calculate optical forces on a chain of 4 spheres of different sizes
@@ -133,3 +146,12 @@ def test_chain_forces():
 
     assert_raises(AssertionError, assert_array_equal,
                   cluster1fz, cluster2fz)
+
+
+def test_mismatched_refractive_indices():
+    with pytest.raises(ValueError):
+        SphereCluster(np.array([[0, 0, 1],
+                                [0, 0, -1]]),
+                      np.ones((6, 6)), np.zeros(3),
+                      1e-6, np.ones(3) * 1.2,
+                      np.ones(2))
