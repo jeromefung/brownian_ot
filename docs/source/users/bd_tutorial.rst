@@ -86,7 +86,10 @@ The simulation can now be run:
 
    traj = sim.run(1000)
 
-This runs the simulation for 1000 time steps. The output, `traj`, is an ndarray:
+This runs the simulation for 1000 time steps. The output, `traj`, is an ndarray.
+Optionally, by providing the `outfname` keyword argument to `sim.run()`,
+the output can be saved as ASDF file.
+If saved as an ASDF file, the trajectory array is stored under the ``trajectory`` key:
 
 ..  testcode::
 
@@ -97,18 +100,21 @@ This runs the simulation for 1000 time steps. The output, `traj`, is an ndarray:
     (1001, 7)
 
 The first row is the particle's initial position and orientation, and the
-subsequent rows are the position at orientation after each time step. Within
+subsequent rows are the position and orientation after each time step. Within
 each row, the first 3 elements are the particle's position, and the last 4
 elements are the particle's orientation specified as a quaternion.
 
 Since `traj` is an ndarray, you can now manipulate it via any of NumPy's
-functions and methods. Most of the time, particulary when running long
-simulations, you will want to save the output. You can automatically save
-the output if you specify the optional `fname` argument::
+functions and methods. If saved, simulation parameters and particle metadata are stored
+alongside the trajectory in the ASDF file (for example,
+``output["simulation"]`` and ``output["particle"]``). Most of the time,
+particularly when running long simulations, you will want to save the output.
+You can automatically save the output if you specify the optional `outfname`
+argument::
 
      sim.run(1000, 'my_trajectory')
 
-This saves your trajectory as `my_trajectory.npy`.     
+This saves the result as `my_trajectory.asdf`. 
 
 
 Simulation with a constant force
