@@ -16,7 +16,7 @@ from brownian_ot.simulation import ConstantForceSimulation, FreeDiffusionSimulat
 ETA = 1e-3
 KT = 1.38e-23 * 295
 DT = 1e-5
-N_STEPS = 5
+N_STEPS = 10
 SEED = 12345
 POS0 = np.array([1e-7, -2e-7, 3e-7])
 ORIENT0 = np.identity(3)
@@ -134,7 +134,7 @@ def test_dimer_particle_metadata(tmp_path):
     sim = FreeDiffusionSimulation(
         particle, DT, ETA, KT, pos0=np.zeros(3), orient0=ORIENT0, seed=SEED
     )
-    traj = sim.run(N_STEPS, outfname = temp_file)
+    traj = sim.run(N_STEPS, outfname = temp_file, downsample_interval = 5)
     output = asdf.open(temp_file)
 
     part_meta = output["particle"]
@@ -144,6 +144,22 @@ def test_dimer_particle_metadata(tmp_path):
     assert part_meta["radius"] == particle.a
     #assert part_meta["equivalent_sphere_radius"] == particle.equivalent_sphere_radius
     assert "a_ratios" not in part_meta
+
+    downsampled_file = tmp_path / "dimer_particle_downsampled.asdf"
+    downsampled_output = asdf.open(downsampled_file)
+
+    # regression test for the aliasing bug: full-res tree must be untouched
+    assert "downsampled_timestep" not in output["simulation"]
+
+    ds_sim = downsampled_output["simulation"]
+    assert ds_sim["downsampled_timestep"] == DT * 5
+    assert ds_sim["timestep"] == DT # unchanged
+
+    ds_part = downsampled_output["particle"]
+    assert ds_part["type"] == "Dimer"
+    assert_allclose(ds_part["sphere_positions"], particle.sphere_pos)
+
+    assert_array_equal(np.asarray(downsampled_output["trajectory"]), traj[::5,:])
 
 
 def test_asdf_file_roundtrip(tmp_path):

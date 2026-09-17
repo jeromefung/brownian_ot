@@ -203,17 +203,17 @@ class Simulation:
         return tree
     
     
-    def _prepare_downsampled_metadata(tree, interval):
+    def _prepare_downsampled_metadata(self, tree, interval):
+        # Shallow copy; keep everything the same except for 2 things
+        tree2 = dict(tree)
+
+        # these things change
         trajectory = tree['trajectory']
-        simulation_dict = tree['simulation']
+        tree2['trajectory'] = trajectory[::interval, :].copy() 
+        simulation_dict = dict(tree['simulation'])
         simulation_dict['downsampled_timestep'] = simulation_dict['timestep'] * interval
-        
-        tree2 = {
-            'trajectory' : trajectory[::interval, :].copy(),
-            'particle' : particle_dict,
-            'beam' : beam_dict,
-            'simulation' : simulation_dict
-        }
+        tree2['simulation'] = simulation_dict        
+
         return tree2
         
 
