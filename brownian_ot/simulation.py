@@ -173,7 +173,7 @@ class Simulation:
                                                            + orig_path.suffix)
                 else:
                     downsampled_path = Path(downsampled_fname)
-                    if not p.suffix:
+                    if not downsampled_path.suffix:
                         downsampled_path = downsampled_path.with_suffix(".asdf")
                 downsampled_asdf_object.write_to(downsampled_path)
                 
