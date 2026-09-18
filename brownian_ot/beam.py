@@ -38,6 +38,17 @@ class Beam:
         self.power = power
         # Note: ott_beam.m sets beam power to 1 upon creation of ott beam object
         # So polarization vector doesn't need to be normalized.
+
+    def _prepare_metadata(self):
+        beam_dict = {
+            'type' : self.__class__.__name__,
+            'wavelength' : self.wavelen,
+            'polarization' : self.pol,
+            'NA' : self.NA,
+            'medium_index' : self.n_med,
+            'power' : self.power
+        }
+        return beam_dict
         
 
 class LGBeam(Beam):
@@ -58,4 +69,10 @@ class LGBeam(Beam):
         self.type = 'LG' # future-proof if we add Hermite-Gaussian in the future
         self.mode = mode
         super().__init__(wavelen, pol, NA, n_med, power)
+    
         
+     def _prepare_metadata(self):
+        beam_dict = super()._prepare_metadata()
+        beam_dict['type'] = self.type
+        beam_dict['mode'] = self.mode
+        return beam_dict
