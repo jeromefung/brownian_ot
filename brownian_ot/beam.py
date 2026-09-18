@@ -69,9 +69,8 @@ class LGBeam(Beam):
         self.type = 'LG' # future-proof if we add Hermite-Gaussian in the future
         self.mode = mode
         super().__init__(wavelen, pol, NA, n_med, power)
-    
         
-     def _prepare_metadata(self):
+    def _prepare_metadata(self):
         beam_dict = super()._prepare_metadata()
         beam_dict['type'] = self.type
         beam_dict['mode'] = self.mode
