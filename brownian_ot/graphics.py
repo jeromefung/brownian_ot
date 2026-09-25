@@ -708,6 +708,28 @@ class LG_Graphics:
     # Public movie APIs
     # ------------------------------------------------------------------
 
+    def _maybe_add_lg_beam(self, show_beam, beam_kw):
+        '''Draw decorative LG chrome once on the *current* subplot if requested.'''
+        if show_beam:
+            self.add_lg_beam(**(beam_kw or {}))
+
+    def _maybe_screenshot_still(self, traj, draw_frame, slowdown, still_frame, still_path):
+        '''
+        After writing the movie, pose one traj row and save a PNG still.
+
+        ``still_frame`` is a *written*-frame index (same numbering as
+        ``n_frames`` / mp4 frames), mapped back with ``slowdown``.
+        '''
+        if still_frame is None or still_path is None:
+            return
+        step = max(1, int(slowdown))
+        i = min(int(still_frame) * step, traj.shape[0] - 1)
+        draw_frame(traj[i, :3], traj[i, 3:])
+        path = str(still_path)
+        if not path.lower().endswith('.png'):
+            path = path + '.png'
+        self.pl.screenshot(path)
+
     def movie(
         self,
         asdf_trajectory=None,
@@ -720,6 +742,10 @@ class LG_Graphics:
         off_screen=True,
         length_scale=1.0,
         n_frames=None,
+        show_beam=False,
+        beam_kw=None,
+        still_frame=None,
+        still_path=None,
     ):
         '''
         Single-pane lab movie: particle at full (pos, quat) each frame.
@@ -730,6 +756,13 @@ class LG_Graphics:
             Multiply positions and radii (use ``1e6`` for m → µm).
         n_frames : int or None
             Max number of **written** mp4 frames after ``slowdown`` striding.
+        show_beam : bool
+            If True, draw decorative LG chrome once via ``add_lg_beam``.
+        beam_kw : dict or None
+            Keyword args forwarded to ``add_lg_beam`` (``w0``, ``ell``, …).
+        still_frame, still_path : optional
+            After the movie, screenshot written-frame ``still_frame`` to
+            ``still_path`` (``.png`` appended if missing).
         '''
         if asdf_trajectory is None:
             asdf_trajectory = {}
@@ -741,6 +774,7 @@ class LG_Graphics:
         self.pl = pv.Plotter(off_screen=off_screen)
         self.pl.camera_position = self._default_camera()
         self._setup_lab_axes()
+        self._maybe_add_lg_beam(show_beam, beam_kw)
         self.pl.open_movie(name + '.mp4', framerate=framerate, quality=quality)
 
         def draw_frame(pos, quat):
@@ -748,6 +782,9 @@ class LG_Graphics:
 
         self._write_frames(
             traj, part, draw_frame, slowdown=slowdown, n_frames=n_frames
+        )
+        self._maybe_screenshot_still(
+            traj, draw_frame, slowdown, still_frame, still_path
         )
         self.pl.close()
 
@@ -765,6 +802,11 @@ class LG_Graphics:
         off_screen=True,
         length_scale=1.0,
         n_frames=None,
+        show_beam=False,
+        beam_kw=None,
+        panel_labels=None,
+        still_frame=None,
+        still_path=None,
     ):
         '''
         Two-pane side-by-side movie: lab motion | orientation at origin.
@@ -774,7 +816,7 @@ class LG_Graphics:
         Left ``(0, 0)`` — lab / trajectory view
             Particle at true COM with ``quat``. Wireframe box from ``bounds``
             or ``_lab_bounds``; one x/y/z label set via ``_add_bounds_axis_labels``.
-            Camera looks through the −y face.
+            Camera looks through the −y face. Optional LG beam chrome here.
 
         Right ``(0, 1)`` — orientation-only view
             Same ``quat``, COM pinned at the origin. Fixed lab arrows from
@@ -791,6 +833,14 @@ class LG_Graphics:
             Optional ``[xmin, xmax, ymin, ymax, zmin, zmax]`` for the left box.
         window_size : tuple
             Pixel size of the combined dual-pane window.
+        show_beam : bool
+            If True, draw ``add_lg_beam`` on the **left** (lab) pane only.
+        beam_kw : dict or None
+            Keyword args forwarded to ``add_lg_beam``.
+        panel_labels : sequence of 2 str or None
+            Optional corner labels, e.g. ``("(a)", "(b)")``, top-left of each pane.
+        still_frame, still_path : optional
+            After the movie, screenshot written-frame ``still_frame`` to PNG.
         '''
         if asdf_trajectory is None:
             asdf_trajectory = {}
@@ -836,11 +886,32 @@ class LG_Graphics:
             (0.0, 0.0, 1.0),
         ]
         self._add_bounds_axis_labels(bnds)
+        self._maybe_add_lg_beam(show_beam, beam_kw)
+        if panel_labels is not None:
+            self.pl.add_text(
+                panel_labels[0],
+                position=(0.04, 0.90),
+                viewport=True,
+                font_size=18,
+                color='black',
+                font='times',
+                name='label_a',
+            )
 
         # Right pane: orientation at origin with fixed lab arrows
         self.pl.subplot(0, 1)
         self._setup_lab_axes()
         self.pl.camera_position = cam
+        if panel_labels is not None:
+            self.pl.add_text(
+                panel_labels[1],
+                position=(0.04, 0.90),
+                viewport=True,
+                font_size=18,
+                color='black',
+                font='times',
+                name='label_b',
+            )
 
         self.pl.open_movie(name + '.mp4', framerate=framerate, quality=quality)
 
@@ -854,5 +925,8 @@ class LG_Graphics:
 
         self._write_frames(
             traj, part, draw_frame, slowdown=slowdown, n_frames=n_frames
+        )
+        self._maybe_screenshot_still(
+            traj, draw_frame, slowdown, still_frame, still_path
         )
         self.pl.close()
