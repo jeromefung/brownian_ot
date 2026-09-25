@@ -127,3 +127,6 @@ paths_config.yaml
 *.log
 *.synctex.gz
 *.pdf
+
+# Generated graphics demo movies (recreate from lg_graphics_tutorial.ipynb)
+examples/graphics_demo_out/
