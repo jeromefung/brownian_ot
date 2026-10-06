@@ -21,7 +21,9 @@ import pytest
 from numpy.testing import assert_allclose
 from scipy.spatial.transform import Rotation
 
-from brownian_ot.graphics import LG_Graphics
+pytest.importorskip('pyvista')  # graphics.py imports PyVista at module level
+
+from brownian_ot.graphics import LG_Graphics  # noqa: E402
 
 
 # ---------------------------------------------------------------------------

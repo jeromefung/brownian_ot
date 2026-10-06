@@ -120,12 +120,15 @@ class LG_Graphics:
         '''
         One labelled axis: arrow mesh plus billboard text past the tip.
 
-        Keyword overrides: ``color``, ``font_size``, ``label_offset``, plus any
-        absolute sizes forwarded to ``arrow`` (``shaft_r``, ``tip_r``, …).
+        Keyword overrides: ``color``, ``font_size``, ``label_offset``,
+        ``italic``, ``bold``, plus any absolute sizes forwarded to ``arrow``
+        (``shaft_r``, ``tip_r``, …).
         '''
         color = kw.pop('color', 'black')
         font_size = kw.pop('font_size', 30)
         label_offset = kw.pop('label_offset', 0.55)
+        italic = kw.pop('italic', True)
+        bold = kw.pop('bold', False)
 
         direction = np.asarray(direction, dtype=float)
         direction = direction / np.linalg.norm(direction)
@@ -137,8 +140,8 @@ class LG_Graphics:
             [label],
             font_size=font_size,
             text_color=text_color,
-            italic=kw.get('italic', True),
-            bold=kw.get('bold', False),
+            italic=italic,
+            bold=bold,
             shape=None,
             show_points=False,
             always_visible=True,
@@ -366,7 +369,7 @@ class LG_Graphics:
         R = LG_Graphics.rotation_matrix(quat)
         lab = pos0 + (a * a_pos) @ R.T
 
-        key = key if key != '' else 'dimer-' + str(len(list(self.pl.actors)))
+        key = key if key != '' else 'cluster-' + str(len(list(self.pl.actors)))
         for i in range(len(a_pos)):
             self.add_sphere(
                 a * a_ratio[i], lab[i], quat, texture, key=key + '-' + str(i)
@@ -595,7 +598,8 @@ class LG_Graphics:
             return a * max(1.0, abs(ar))
         return 1.0
 
-    def _default_camera(self):
+    @staticmethod
+    def _default_camera():
         '''Default ``[eye, look_at, up]`` for orientation / single-pane views.'''
         return [
             (13, 13, 8),
@@ -665,7 +669,7 @@ class LG_Graphics:
             ),
         )
 
-    def _write_frames(self, traj, part, draw_frame, slowdown=1, n_frames=None):
+    def _write_frames(self, traj, draw_frame, slowdown=1, n_frames=None):
         '''
         Stride through ``traj`` and call ``draw_frame(pos, quat)`` each step.
 
@@ -707,6 +711,11 @@ class LG_Graphics:
     # ------------------------------------------------------------------
     # Public movie APIs
     # ------------------------------------------------------------------
+
+    def _replace_plotter(self, **plotter_kw):
+        '''Close the current plotter (releasing its render window) and make a new one.'''
+        self.pl.close()
+        self.pl = pv.Plotter(**plotter_kw)
 
     def _maybe_add_lg_beam(self, show_beam, beam_kw):
         '''Draw decorative LG chrome once on the *current* subplot if requested.'''
@@ -771,7 +780,7 @@ class LG_Graphics:
             data['trajectory'], data['particle'], length_scale
         )
 
-        self.pl = pv.Plotter(off_screen=off_screen)
+        self._replace_plotter(off_screen=off_screen)
         self.pl.camera_position = self._default_camera()
         self._setup_lab_axes()
         self._maybe_add_lg_beam(show_beam, beam_kw)
@@ -781,7 +790,7 @@ class LG_Graphics:
             self._draw_particle(part, pos, quat, key='lab', texture=texture)
 
         self._write_frames(
-            traj, part, draw_frame, slowdown=slowdown, n_frames=n_frames
+            traj, draw_frame, slowdown=slowdown, n_frames=n_frames
         )
         self._maybe_screenshot_still(
             traj, draw_frame, slowdown, still_frame, still_path
@@ -852,7 +861,7 @@ class LG_Graphics:
         a = self._particle_pad_length(part)
         cam = self._default_camera()
 
-        self.pl = pv.Plotter(
+        self._replace_plotter(
             shape=(1, 2), window_size=window_size, off_screen=off_screen
         )
 
@@ -924,7 +933,7 @@ class LG_Graphics:
             )
 
         self._write_frames(
-            traj, part, draw_frame, slowdown=slowdown, n_frames=n_frames
+            traj, draw_frame, slowdown=slowdown, n_frames=n_frames
         )
         self._maybe_screenshot_still(
             traj, draw_frame, slowdown, still_frame, still_path

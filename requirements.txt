@@ -4,6 +4,8 @@ quaternion
 pyyaml
 matlab.engine
 asdf
+pyvista
+imageio-ffmpeg
 pytest
 
 
