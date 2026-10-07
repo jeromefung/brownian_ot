@@ -8,6 +8,7 @@ from brownian_ot import Beam, LGBeam
 from brownian_ot.particles import Sphere, Spheroid, Dimer, SphereCluster
 from brownian_ot.simulation import OTSimulation
 from brownian_ot.ott_wrapper import make_ott_force, config, _MATLAB_ENGINE
+from brownian_ot import ott_wrapper
 from brownian_ot.utils import sphere_D
 from brownian_ot.force_utils import calc_fz, find_zeq
 from brownian_ot.analysis import quaternion_orientation_average
@@ -39,6 +40,7 @@ def test_spheroid_ot():
     sim.run(100)
 
 @requires_matlab
+@requires_mstm
 def test_dimer():
     sim = OTSimulation(dimer, beam, timestep = 1e-5,
                        viscosity = 1e-3, kT = 295 * 1.38e-23,
@@ -52,6 +54,7 @@ def test_dimer():
                     atol = 0.02)
 
 @requires_matlab
+@requires_mstm
 def test_dimer_force_calc():
     '''
     Check force calculations for a Rayleigh-sized dimer.
@@ -119,6 +122,7 @@ def test_mismatched_indices_ratios():
                                 np.ones(2))
 
 @requires_matlab
+@requires_mstm
 def test_chain_forces():
     '''
     Calculate optical forces on a chain of 4 spheres of different sizes
@@ -155,3 +159,64 @@ def test_mismatched_refractive_indices():
                       np.ones((6, 6)), np.zeros(3),
                       1e-6, np.ones(3) * 1.2,
                       np.ones(2))
+
+
+@requires_matlab
+@requires_mstm
+def test_lossless_dimer():
+    '''Check optical forces/torques for a non-absorbing dimer on axis in a 
+    circularly-polarized beam.
+    Two things should be true: there should be 0 axial torque, and the matrix
+    I + 2T should be unitary.
+    '''
+    dimer = Dimer(0.4e-6, 1.45)
+    force = make_ott_force(dimer, beam)
+
+    # check the T matrix
+    ott_wrapper.eng.eval("global Tmatrix; T = full(Tmatrix.data); Treal = real(T); Timag = imag(T);", 
+                         nargout = 0)
+    T = np.array(ott_wrapper.eng.workspace['Treal']) + \
+        1j * np.array(ott_wrapper.eng.workspace['Timag'])
+    S = np.identity(len(T)) + 2 * T 
+    assert np.linalg.norm(S.conj().T @ S - np.identity(len(T))) < 1e-3
+
+    # now check the axial torque
+    tau_scale = beam.power / (2 * np.pi * 3e8 / beam.wavelen)  # P / omega
+    for z in [0, 0.5e-6]:
+        tau_z = force(np.array([0, 0, z]), np.identity(3))[5]
+        assert abs(tau_z) < 1e-3 * tau_scale
+
+@requires_matlab
+@requires_mstm
+def test_displaced_sphere_mstm_vs_mie():
+    '''
+    Check of reciprocity fill of T matrices read from MSTM.
+    An absorbing sphere displaced from the origin must give the same
+    force as a Mie sphere at the shifted position, and an additional torque about the
+    cluster origin of d x F. Use equal-radius, index-matched "ghost" spheres to
+    get around how MSTM computes the T-matrix about the cluster
+    center of mass.
+    A displaced sphere exercises the n != n' and TE/TM coupling elements that
+    a centered sphere lacks. Displacement is in a general direction, so the
+    test is sensitive to the sign convention of the reciprocity fill.
+    '''
+    a, n_p, n_med = 0.4e-6, 1.45+0.1j, beam.n_med
+    v = np.array([0.4, 0.3, 0.3])            # displacement, radius units
+    e = np.cross(v, [0, 0, 1])
+    e /= np.linalg.norm(e)
+    positions = np.array([v, -v / 2 + 2 * e, -v / 2 - 2 * e])  # sum = 0, no overlaps
+    cluster = SphereCluster(positions, sphere_D(a, 1, 1), np.zeros(3), a,
+                            np.array([n_p, n_med, n_med], dtype=complex))
+    origin = np.array([0.3e-6, -0.2e-6, 0.2e-6])
+    cluster_force_func = make_ott_force(cluster, beam)
+    cluster_force = cluster_force_func(origin, np.identity(3))
+
+    shift = v * a
+    mie_force_func = make_ott_force(Sphere(a, n_p), beam) # Caution: overwrites previous MSTM force function
+    mie_force = mie_force_func(origin + shift, np.identity(3))
+    expected_torque = mie_force[3:] + np.cross(shift, mie_force[:3])
+
+    assert (np.linalg.norm(cluster_force[:3] - mie_force[:3])
+            < 1e-3 * np.linalg.norm(mie_force[:3]))
+    assert (np.linalg.norm(cluster_force[3:] - expected_torque)
+            < 1e-3 * np.linalg.norm(expected_torque))
